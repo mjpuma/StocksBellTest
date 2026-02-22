@@ -1,5 +1,9 @@
-#Generates S1 Data and Violation Percentage for Agroculture related Tickers
-#Outputs s1_values.csv and violation_pct.csv
+"""
+Generate S1 values and violation percentage for agriculture-related tickers.
+
+Reads yfinance_tickers.csv, downloads returns, computes Bell-CHSH S1 per pair
+in rolling 20-day windows, and outputs Results/s1_values.csv and Results/violation_pct.csv.
+"""
 
 import numpy as np
 import pandas as pd

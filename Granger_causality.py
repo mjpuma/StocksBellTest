@@ -1,19 +1,30 @@
+"""
+Granger causality tests: violation % vs regime volatility (both directions, lags 1–20).
+
+Requires Results/violation_pct.csv and Results/volatility_traces/regime_vol.csv.
+Outputs Results/granger_results.csv and Figures/granger_results_table.png
+"""
+
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from statsmodels.tsa.stattools import grangercausalitytests
 
-S1_FILE = "Results/s1_values.csv"                 
+os.makedirs("Figures", exist_ok=True)
+
+# Use violation_pct (one value per date); s1_values has many rows per date (one per pair)
+VIOLATION_FILE = "Results/violation_pct.csv"
 VOL_FILE = "Results/volatility_traces/regime_vol.csv"
 OUT_CSV = "Results/granger_results.csv"
 
 MAX_LAG = 20
 SIG = 0.05
 
-s1 = pd.read_csv(S1_FILE, parse_dates=["Date"])
+s1 = pd.read_csv(VIOLATION_FILE, parse_dates=["Date"])
 vol = pd.read_csv(VOL_FILE, parse_dates=["Date"])
 
-s1 = s1.rename(columns={"S1": "S1_value"})
+s1 = s1.rename(columns={"ViolationPct": "S1_value"})
 vol = vol.rename(columns={"Volatility": "vol"})
 
 df = pd.merge(
@@ -85,6 +96,6 @@ for (row, col), cell in tbl.get_celld().items():
     cell.set_height(0.03)
 
 plt.tight_layout()
-plt.show()
+plt.savefig("Figures/granger_results_table.png", dpi=150, bbox_inches="tight")
 
 

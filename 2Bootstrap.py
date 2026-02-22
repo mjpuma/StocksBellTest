@@ -1,5 +1,9 @@
-#Runs Bootstrap to find confidence intervals
-#Requires Results/volatility_traces/regime_vol.csv and Results/networks. Outputs to Results/event_tables
+"""
+Bootstrap confidence intervals for network metrics in extreme vs normal periods.
+
+Requires Results/volatility_traces/regime_vol.csv and Results/networks.
+Outputs Results/event_tables/*.csv
+"""
 
 import os
 import glob

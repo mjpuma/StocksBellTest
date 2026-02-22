@@ -1,4 +1,9 @@
-#Generates Fig 2 in final paper. Requires Results/networks from 2.py
+"""
+Generate Fig 2: network metrics panel (density, giant component, clustering, etc.).
+
+Requires Results/networks from 2.py.
+Outputs Figures/network_metrics_panel.png
+"""
 
 import os
 import glob
@@ -60,5 +65,5 @@ for label, date in crises.items():
 
 plt.tight_layout()
 plt.savefig(OUTPUT_FIG, dpi=300)
-plt.show()
+plt.close()
 print(f"Saved panel figure to {OUTPUT_FIG}")

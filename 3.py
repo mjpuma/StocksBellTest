@@ -1,5 +1,9 @@
-#Runs permutation test to determine p-values and q-values for network metrics
-#Requires Results/volatility_traces/regime_vol.csv and Results/networks. Outputs Figures/event_tables and Results/event_tables
+"""
+Permutation tests for network metrics: extreme vs normal periods.
+
+Requires Results/volatility_traces/regime_vol.csv and Results/networks.
+Outputs Figures/event_tables/*.png and Results/event_tables/*.csv
+"""
 
 import os
 import glob

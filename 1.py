@@ -1,5 +1,9 @@
-#Established Methods for Identifying Crises
-#Requires violation_pct.csv from 0.py as input. Outputs Results/volatility_traces, Figures/Established_Methods_&_S1_matplotlib.png, and Figures/Established_Methods_&_S1.html
+"""
+Volatility methods (rolling, GARCH, regime-switching) for S&P GSCI.
+
+Requires Results/violation_pct.csv from 0.py.
+Outputs Results/volatility_traces/*.csv and Figures/Established_Methods_&_S1.*
+"""
 
 import numpy as np
 import pandas as pd

@@ -1,5 +1,9 @@
-#Generates networks for every trading day
-#Requires s1_values.csv from 0.py. Outputs Results/networks and Figures/networks
+"""
+Build daily networks from S1 values (edge if S1 > 2).
+
+Requires Results/s1_values.csv from 0.py.
+Outputs Results/networks/*.csv and Figures/networks/*.html
+"""
 
 import os
 import pandas as pd
