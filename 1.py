@@ -14,6 +14,7 @@ from plotly.subplots import make_subplots
 from arch import arch_model
 from statsmodels.tsa.regime_switching.markov_regression import MarkovRegression
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import plotly.io as pio
 
 pio.renderers.default = "browser"
@@ -84,10 +85,7 @@ fig = make_subplots(
     shared_xaxes=True,
     vertical_spacing=0.07,
     row_heights=[0.6, 0.4],
-    subplot_titles=(
-        "Volatility Methods (Rolling, GARCH, Regime-Switching)",
-        "|S₁| > 2 Violations Over Time"
-    )
+    subplot_titles=("(A)", "(B)")
 )
 
 fig.add_trace(go.Scatter(x=data.index, y=data["rolling_vol"], mode="lines",
@@ -149,9 +147,9 @@ buttons.append(dict(label="All", method="relayout",
                     args=[{"shapes": all_shapes, "annotations": all_annotations}]))
 
 fig.update_layout(
-    #template="plotly_dark",
     height=1200,
     width=1800,
+    font=dict(size=16),
     updatemenus=[dict(
         type="dropdown", x=0.99, y=1.05, xanchor="right", yanchor="top",
         direction="down", buttons=buttons
@@ -165,9 +163,10 @@ fig.update_layout(
 fig.show()
 fig.write_html("Figures/Established_Methods_&_S1.html")
 
+plt.rcParams.update({"font.size": 16})
 fig_m, (ax1, ax2) = plt.subplots(2, 1, figsize=(18, 12), sharex=True, gridspec_kw={"height_ratios": [0.6, 0.4]})
-fig_m.suptitle("Volatility Methods (Rolling, GARCH, Regime-Switching) & |S₁| > 2 Violations", fontsize=16)
 
+ax1.text(0.02, 0.98, "(A)", transform=ax1.transAxes, fontsize=18, fontweight="bold", va="top", ha="left")
 ax1.plot(data.index, data["rolling_vol"], color="darkturquoise", label="Rolling Realized Vol (20d)")
 ax1.plot(data.index, data["garch_vol"], color="lightskyblue", label="GARCH(1,1) Volatility")
 ax1.plot(data.index, data["regime_vol"], color="lightsalmon", label="Regime-Switching Volatility")
@@ -200,7 +199,7 @@ if g40_entry:
         textcoords="offset points",
         ha="left",
         va="center",
-        fontsize=10,
+        fontsize=16,
         color=color,
         fontweight="bold",
         bbox=dict(facecolor="white", alpha=0.8, edgecolor="none", pad=1),
@@ -208,16 +207,24 @@ if g40_entry:
     )
 
 
-ax1.legend()
+ax1.legend(loc="upper right", frameon=True)
 ax1.grid(True, linestyle="--", alpha=0.4)
 
+# X-axis: year only; y-axis tick count
+for ax in (ax1, ax2):
+    ax.xaxis.set_major_locator(mdates.YearLocator(base=5))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=4))
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+
+ax2.text(0.02, 0.98, "(B)", transform=ax2.transAxes, fontsize=18, fontweight="bold", va="top", ha="left")
 ax2.plot(violation_df["Date"], violation_df["ViolationPct"],
          color="mediumvioletred", label="Violation Percent (|S1|>2)")
 ax2.set_ylabel("Violation Percent (|S1| > 2)")
-ax2.set_xlabel("Date")
 ax2.legend()
 ax2.grid(True, linestyle="--", alpha=0.4)
 
 plt.tight_layout(rect=[0, 0, 1, 0.97])
-plt.savefig("Figures/Established_Methods_&_S1_matplotlib.png", dpi=300)
-plt.show()
+plt.savefig("Figures/Fig01_volatility_and_violation.png", dpi=300)
+plt.savefig("Figures/Fig01_volatility_and_violation.svg")
+plt.close()

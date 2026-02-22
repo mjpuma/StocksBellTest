@@ -124,7 +124,7 @@ def plot_table(df_numeric, output_file, title, color_col="p_value", include_q=Fa
         cellLoc="center"
     )
     table.auto_set_font_size(False)
-    fontsize = 10 if n_cols <= 8 else max(6, int(10 - (n_cols - 8) * 0.5))
+    fontsize = 16 if n_cols <= 8 else max(12, int(16 - (n_cols - 8) * 0.5))
     table.set_fontsize(fontsize)
     table.scale(1, 1.2)
     for (r, c), cell in table.get_celld().items():
@@ -136,9 +136,9 @@ def plot_table(df_numeric, output_file, title, color_col="p_value", include_q=Fa
                 cell.get_text().set_weight("bold")
         cell.set_edgecolor("black")
 
-    plt.title(title, fontsize=14, pad=12)
     plt.tight_layout()
     plt.savefig(output_file, dpi=300, bbox_inches="tight")
+    plt.savefig(output_file.replace(".png", ".svg"), bbox_inches="tight")
     plt.close()
     print(f"Saved figure: {output_file}")
 
@@ -223,7 +223,7 @@ def fmt(x):
 
 def plot_event_table_from_csv(event_id):
     FILE = f"Results/event_tables/permtest_event{event_id}.csv"
-    OUTPUT = f"Figures/event_tables/permtest_event{event_id}_table.png"
+    OUTPUT = f"Figures/Table01_permtest_event{event_id}.png"
 
     df = pd.read_csv(FILE)
     df = df.drop(df.index[0])
@@ -281,7 +281,7 @@ def plot_event_table_from_csv(event_id):
     )
 
     tbl.auto_set_font_size(False)
-    tbl.set_fontsize(9)
+    tbl.set_fontsize(16)
     tbl.scale(1, 1.12)
 
     for (row, col), cell in tbl.get_celld().items():
@@ -293,6 +293,7 @@ def plot_event_table_from_csv(event_id):
 
     plt.tight_layout()
     plt.savefig(OUTPUT, dpi=300, bbox_inches="tight")
+    plt.savefig(OUTPUT.replace(".png", ".svg"), bbox_inches="tight")
     plt.close(fig)
 
     print(f"Saved {OUTPUT}")
@@ -397,8 +398,8 @@ if __name__ == "__main__":
     agg_df.to_csv(agg_csv, index=False)
 
     agg_title = "Permutation Test — Aggregate: All Extreme vs All Normal Days"
-    fig_p = os.path.join(OUT_TABLE_DIR, "aggregate_pvals.png")
-    fig_q = os.path.join(OUT_TABLE_DIR, "aggregate_qvals.png")
+    fig_p = os.path.join("Figures", "Table01_permtest_aggregate_pvals.png")
+    fig_q = os.path.join("Figures", "Table01_permtest_aggregate_qvals.png")
     plot_table(agg_df, fig_p, agg_title + " (p-values)", color_col="p_value", include_q=False)
     plot_table(agg_df, fig_q, agg_title + " (q-values)", color_col="q_value", include_q=True)
 

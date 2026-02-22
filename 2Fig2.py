@@ -9,10 +9,12 @@ import os
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from sklearn.preprocessing import MinMaxScaler
 
+plt.rcParams.update({"font.size": 16})
 METRICS_DIR = "Results/networks"
-OUTPUT_FIG = "Figures/network_metrics_panel.png"
+OUTPUT_FIG = "Figures/Fig02_network_metrics.png"
 os.makedirs("Figures", exist_ok=True)
 
 metric_files = sorted(glob.glob(os.path.join(METRICS_DIR, "*_metrics.csv")))
@@ -37,33 +39,50 @@ fig, axes = plt.subplots(4, 1, figsize=(12, 12), sharex=True)
 
 if "GiantComponentSizePct" in metrics_df.columns:
     axes[0].plot(metrics_df["Date"], metrics_df["GiantComponentSizePct"]/100, label="Giant Component Size", color='darksalmon', linewidth=2)
-    axes[0].plot(metrics_df["Date"], metrics_df["AvgClusteringCoeff"], label="Avgerage Clustering Coefficient", color='silver', linewidth=2)
-    axes[0].set_title("Density, Giant Component, Clustering")
+    axes[0].plot(metrics_df["Date"], metrics_df["AvgClusteringCoeff"], label="Average Clustering Coefficient", color='silver', linewidth=2)
 
 axes[0].plot(metrics_df["Date"], metrics_df["Density"], label="Density", color='royalblue', linewidth=2)
-axes[0].legend()
+axes[0].text(0.02, 0.98, "(A)", transform=axes[0].transAxes, fontsize=18, fontweight="bold", va="top", ha="left")
+axes[0].legend(loc="upper center", bbox_to_anchor=(0.5, 1.35), ncol=3, frameon=True)
 if "ScaleFreeAlpha" in metrics_df.columns:
     axes[1].plot(metrics_df["Date"], metrics_df["ScaleFreeAlpha"], linewidth=2, color='slateblue')
-    axes[1].set_title("Scale Free Alpha")
+    axes[1].text(0.02, 0.98, "(B)", transform=axes[1].transAxes, fontsize=18, fontweight="bold", va="top", ha="left")
 
 if "CommunitySizeEntropy" in metrics_df.columns:
     axes[2].plot(metrics_df["Date"], metrics_df["CommunitySizeEntropy"], color="darkorange", linewidth=2)
-    axes[2].set_title("Community Size Entropy")
+    axes[2].text(0.02, 0.98, "(C)", transform=axes[2].transAxes, fontsize=18, fontweight="bold", va="top", ha="left")
 
 if "NumCommunities" in metrics_df.columns:
     axes[3].plot(metrics_df["Date"], metrics_df["NumCommunities"], color="gainsboro", linewidth=2)
-    axes[3].set_title("Number of Communities")
-    axes[3].set_xlabel("Date")
+    axes[3].text(0.02, 0.98, "(D)", transform=axes[3].transAxes, fontsize=18, fontweight="bold", va="top", ha="left")
 
-for label, date in crises.items():
+# Stagger y-positions for crisis labels to avoid overlap (2008, COVID, Ukraine)
+# Offset labels left of vertical lines by ~45 days
+label_offset_days = pd.Timedelta(days=45)
+crisis_y_fracs = [0.95, 0.85, 0.75]  # top, middle, lower for axes[:2]
+crisis_y_fracs_lower = [0.35, 0.25, 0.15]  # for axes[2:]
+for i, (label, date) in enumerate(crises.items()):
+    y_frac = crisis_y_fracs[min(i, len(crisis_y_fracs) - 1)]
+    y_frac_lo = crisis_y_fracs_lower[min(i, len(crisis_y_fracs_lower) - 1)]
+    text_date = date - label_offset_days
     for ax in axes[:2]:
         ax.axvline(date, color="black", linestyle="--", alpha=0.7)
-        ax.text(date, ax.get_ylim()[1]*0.95, label, rotation=0, color="black", verticalalignment="top", fontsize=9)
+        y_pos = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) * y_frac
+        ax.text(text_date, y_pos, label, rotation=0, color="black", verticalalignment="top", fontsize=14, ha="right")
     for ax in axes[2:]:
         ax.axvline(date, color="black", linestyle="--", alpha=0.7)
-        ax.text(date, ax.get_ylim()[1]*0.3, label, rotation=0, color="black", verticalalignment="top", fontsize=9)
+        y_pos = ax.get_ylim()[0] + (ax.get_ylim()[1] - ax.get_ylim()[0]) * y_frac_lo
+        ax.text(text_date, y_pos, label, rotation=0, color="black", verticalalignment="top", fontsize=14, ha="right")
 
-plt.tight_layout()
+# X-axis: year only (match Established_Methods); y-axis tick count
+for ax in axes:
+    ax.xaxis.set_major_locator(mdates.YearLocator(base=5))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax.yaxis.set_major_locator(plt.MaxNLocator(nbins=4))
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right")
+
+plt.tight_layout(rect=[0, 0, 1, 0.88])
 plt.savefig(OUTPUT_FIG, dpi=300)
+plt.savefig(OUTPUT_FIG.replace(".png", ".svg"))
 plt.close()
 print(f"Saved panel figure to {OUTPUT_FIG}")

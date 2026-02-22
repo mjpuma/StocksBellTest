@@ -196,10 +196,10 @@ def plot_network(G, title, out_html):
     fig = go.Figure(
         data=edge_traces + [node_trace],
         layout=go.Layout(
-            title=dict(text=title, font=dict(size=14)),
+            font=dict(size=16),
             showlegend=False,
             hovermode="closest",
-            margin=dict(b=0, l=0, r=0, t=30),
+            margin=dict(b=0, l=0, r=0, t=20),
             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
             yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)
         )

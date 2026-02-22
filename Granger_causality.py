@@ -73,6 +73,7 @@ for _, row in res_df.iterrows():
     else:
         row_colors.append(["white"] * len(cols))
 
+plt.rcParams.update({"font.size": 16})
 fig, ax = plt.subplots(figsize=(12, 0.6 * len(res_df) + 1.5))
 ax.axis("off")
 
@@ -85,7 +86,7 @@ tbl = ax.table(
 )
 
 tbl.auto_set_font_size(False)
-tbl.set_fontsize(9)
+tbl.set_fontsize(16)
 tbl.scale(1, 1.12)
 
 for (row, col), cell in tbl.get_celld().items():
@@ -96,6 +97,7 @@ for (row, col), cell in tbl.get_celld().items():
     cell.set_height(0.03)
 
 plt.tight_layout()
-plt.savefig("Figures/granger_results_table.png", dpi=150, bbox_inches="tight")
+plt.savefig("Figures/Table02_granger_causality.png", dpi=300, bbox_inches="tight")
+plt.savefig("Figures/Table02_granger_causality.svg", bbox_inches="tight")
 
 

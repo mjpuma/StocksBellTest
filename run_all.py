@@ -2,7 +2,7 @@
 """
 Run the full analysis pipeline in order.
 
-  0.py → 1.py → 2.py → 2Bootstrap.py → 2Fig2.py → 3.py → Granger_causality.py
+  0.py → 1.py → 2.py → 2Bootstrap.py → 2Fig2.py → 2Fig3_networks.py → 3.py → Granger_causality.py → timing_analysis.py
 
 Sets MPLBACKEND=Agg to avoid blocking on interactive plots.
 """
@@ -19,8 +19,10 @@ scripts = [
     "2.py",
     "2Bootstrap.py",
     "2Fig2.py",
+    "2Fig3_networks.py",
     "3.py",
     "Granger_causality.py",
+    "timing_analysis.py",
 ]
 
 for i, script in enumerate(scripts, 1):
