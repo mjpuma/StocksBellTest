@@ -120,17 +120,62 @@ The CHSH-type correlator is:
 
 $$S_1 = \mathbb{E}(a,b) + \mathbb{E}(a,b') + \mathbb{E}(a',b) - \mathbb{E}(a',b')$$
 
-Under local hidden-variable theories, \(|S_1| \leq 2\). Values \(|S_1| > 2\) indicate **Bell inequality violations**.
+Under any **local hidden-variable (LHV) theory**, the Bell-CHSH inequality implies \(|S_1| \leq 2\). Values \(|S_1| > 2\) therefore indicate **Bell inequality violations** that cannot be explained by LHV models.
 
 ### 2.5 Violation Percentage
 
-For each trading date \(t\), we define:
+Let \(N^{\text{viol}}_t\) denote the number of ticker pairs \((A,B)\) with valid data and \(|S_1^{(A,B)}(t)| > 2\) on date \(t\), and let \(\text{TotalPairs}_t\) be the total number of pairs with valid \(S_1\) on that date. We define:
 
-$$\text{ViolationPct}_t = 100 \times \frac{\#\{(A,B) : |S_1^{(A,B)}(t)| > 2\}}{\text{TotalPairs}_t}$$
+$$\text{ViolationPct}_t = 100 \times \frac{N^{\text{viol}}_t}{\text{TotalPairs}_t}$$
 
-where \(\text{TotalPairs}_t\) is the number of ticker pairs with valid \(S_1\) on date \(t\). This yields one time series of violation percentage per day.
+This yields one time series of violation percentage per day.
 
-### 2.6 Outputs
+### 2.6 Rationale and Justification
+
+#### Why S₁ Violation Is Not "Just Correlation"
+
+A natural concern is that observed violations might be explained by ordinary correlation or by a common hidden factor (e.g., market-wide shocks). This concern is addressed by the structure of the Bell-CHSH inequality.
+
+**Ordinary correlation** (e.g., Pearson or Spearman) between two variables is bounded in \([-1, 1]\). Such correlations can always be reproduced by a **local hidden-variable model**: a common factor \(\lambda\) (e.g., "market sentiment") that influences both outcomes, with no need for nonlocal or nonclassical effects. In that setting, the joint distribution factors as \(P(a,b|\lambda) = P(a|\lambda)P(b|\lambda)\), and any correlator built from such a model satisfies classical bounds.
+
+The **CHSH quantity** \(S_1\) is a specific linear combination of four correlators, each conditioned on different measurement settings (here: different threshold masks). Bell (1964) and Clauser, Horne, Shimony, and Holt (1969) proved that under **any** local hidden-variable theory—i.e., any model in which outcomes depend only on local information and a shared hidden variable \(\lambda\)—the inequality \(|S_1| \leq 2\) must hold. The bound 2 is **derived**, not chosen: it follows from the algebra of LHV models.
+
+Therefore, if we observe \(|S_1| > 2\), we can conclude that **no** local hidden-variable model can reproduce the data. The correlation structure is incompatible with any explanation that relies solely on a common factor and local responses. This is the core of Bell's theorem: the bound 2 is a necessary consequence of locality and realism in the sense of pre-existing values.
+
+#### Why the Threshold 2
+
+The value 2 is the **Bell bound** (the maximum attainable under LHV theories). It is not a tuning parameter. For the CHSH form used here:
+
+- **Classical (LHV):** \(|S_1| \leq 2\)
+- **Quantum:** \(|S_1| \leq 2\sqrt{2} \approx 2.83\)
+- **General no-signaling:** \(|S_1| \leq 4\)
+
+We classify \(|S_1| > 2\) as a violation because that is the threshold at which LHV explanations are ruled out. Values between 2 and \(2\sqrt{2}\) are compatible with quantum-like correlations but not with classical hidden variables.
+
+#### Why the Return Threshold \(\tau = 0.05\)
+
+The CHSH test requires **binary outcomes** (e.g., "up" vs "down" or "above threshold" vs "below threshold") for each measurement. We obtain these by thresholding the magnitude of returns at \(\tau = 0.05\) (5%).
+
+**Justification for 5%:**
+
+1. **Economic interpretation:** A 5% daily move is widely treated as a "significant" or "large" move in equity markets. It corresponds roughly to a two- to three-standard-deviation event in typical daily volatility. Using this threshold separates "normal" fluctuations from "event-like" moves.
+
+2. **Stability of the Bell test:** The CHSH inequality is defined for binary outcomes. If the threshold is too low, almost all days are "above," and the test degenerates. If it is too high, almost all days are "below," and we lose discriminatory power. A 5% threshold yields a non-trivial split in both marginals across typical market conditions.
+
+3. **Robustness:** The codebase supports alternative modes (percentile-based or standard-deviation-based thresholds) for sensitivity analysis. The fixed 5% threshold provides a transparent, reproducible baseline. Prior work in finance has used similar cutoffs (e.g., 5% for "large" daily moves) for consistency with the literature.
+
+#### Addressing the "Hidden Variable" Critique
+
+Reviewers may ask: "Could a hidden variable explain the correlations?"
+
+The answer is: **not if \(|S_1| > 2\).** By definition, any model that attributes the outcomes to a shared hidden variable \(\lambda\) and local response functions satisfies the LHV assumptions. Bell's theorem shows that all such models obey \(|S_1| \leq 2\). Therefore:
+
+- If \(|S_1| \leq 2\): the data are compatible with (but do not prove) an LHV explanation.
+- If \(|S_1| > 2\): **no** LHV model can fit the data. The violation is a mathematical consequence of the CHSH inequality.
+
+The threshold 2 is thus the dividing line between "explainable by hidden variables" and "not explainable by hidden variables." It is not a matter of convention or choice; it is the boundary implied by Bell's theorem.
+
+### 2.7 Outputs
 
 - **s1_values.csv:** Date, PairA, PairB, S1
 - **violation_pct.csv:** Date, ViolationPct, TotalPairs, ViolationCounts
