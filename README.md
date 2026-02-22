@@ -2,6 +2,8 @@
 
 Analysis pipeline for detecting Bell inequality violations in agriculture-related equity returns and relating them to commodity volatility and network structure.
 
+This repository is an updated and extended version of [56sarager/Final-Paper-Draft-](https://github.com/56sarager/Final-Paper-Draft-).
+
 ## Quick Start
 
 ```bash
