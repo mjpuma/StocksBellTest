@@ -1,9 +1,8 @@
 """
-Generate Fig03: comparative network snapshots at crisis and calm periods.
+Generate Fig03: network snapshots at crisis periods (giant component only).
 
 Requires Results/s1_values.csv from 0.py, Results/volatility_traces/regime_vol.csv.
-Outputs Figures/Fig03a_network_2008.png, Fig03b_network_covid.png,
-         Fig03c_network_ukraine.png, Fig03d_network_calm.png
+Outputs Figures/Fig03_networks.png (1×3 multipanel, full-width).
 """
 
 import os
@@ -12,10 +11,14 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 
+plt.rcParams.update({"font.size": 14})
 S1_FILE = "Results/s1_values.csv"
 VOL_FILE = "Results/volatility_traces/regime_vol.csv"
 VOL_THRESHOLD = 0.4
 N_EVENTS = 3
+LABEL_DEGREE_MIN = 2  # Only label nodes with degree >= this
+NODE_SIZE_BASE = 80
+NODE_SIZE_SCALE = 25
 
 os.makedirs("Figures", exist_ok=True)
 
@@ -55,33 +58,17 @@ def create_network(df_day, threshold=2.0):
     return G
 
 
-def plot_network_static(G, title, outpath):
-    """Static matplotlib network plot."""
+def extract_giant_component(G):
+    """Return subgraph of largest connected component, or None if no edges."""
     if G.number_of_edges() == 0:
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.text(0.5, 0.5, "No edges (no violations)", ha="center", va="center", fontsize=16)
-        ax.set_title(title)
-        ax.axis("off")
-    else:
-        pos = nx.spring_layout(G, seed=42, k=1.5)
-        fig, ax = plt.subplots(figsize=(10, 10))
-        degrees = dict(G.degree())
-        node_sizes = [30 + 20 * degrees.get(n, 0) for n in G.nodes()]
-        node_colors = [degrees.get(n, 0) for n in G.nodes()]
-        nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color=node_colors,
-                               cmap=plt.cm.Blues, alpha=0.8, ax=ax)
-        nx.draw_networkx_edges(G, pos, alpha=0.4, width=0.8, ax=ax)
-        nx.draw_networkx_labels(G, pos, font_size=6, ax=ax)
-    ax.set_title(title, fontsize=16)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.savefig(outpath, dpi=300)
-    plt.savefig(outpath.replace(".png", ".svg"))
-    plt.close()
+        return None
+    components = list(nx.connected_components(G))
+    largest = max(components, key=len)
+    return G.subgraph(largest).copy()
 
 
 # Get event dates (peak volatility in each crisis)
-vol_df = pd.read_csv(VOL_FILE, parse_dates=["Date"]).sort_values("Date").reset_index(drop=True)
+vol_df = pd.read_csv(VOL_FILE, parse_dates=["Date"]).dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
 mask_extreme = vol_df["Volatility"].values > VOL_THRESHOLD
 ext_blocks = find_blocks(vol_df["Date"].values, mask_extreme)
 norm_blocks = find_blocks(vol_df["Date"].values, ~mask_extreme)
@@ -106,19 +93,6 @@ for pair in matched:
     peak_idx = sub["Volatility"].idxmax()
     crisis_dates.append(vol_df.loc[peak_idx, "Date"])
 
-# Calm period: pick a date in a long normal block
-norm_blocks_sorted = sorted(norm_blocks, key=lambda b: b["idx_end"] - b["idx_start"] + 1, reverse=True)
-calm_block = None
-for nb in norm_blocks_sorted:
-    if nb["idx_end"] - nb["idx_start"] >= 60:  # at least 60 trading days
-        calm_block = nb
-        break
-if calm_block:
-    mid = calm_block["idx_start"] + (calm_block["idx_end"] - calm_block["idx_start"]) // 2
-    calm_date = vol_df.loc[mid, "Date"]
-else:
-    calm_date = pd.Timestamp("2017-06-15")  # fallback
-
 # Ensure dates exist in s1 data
 available_dates = sorted(df["Date"].unique())
 
@@ -128,20 +102,59 @@ def nearest_date(target):
     return available_dates[idx]
 
 crisis_dates = [nearest_date(d) for d in crisis_dates]
-calm_date = nearest_date(calm_date)
-
 labels = ["2008 Financial Crisis", "COVID-19", "Ukraine War"]
-outputs = [
-    ("Figures/Fig03a_network_2008.png", labels[0]),
-    ("Figures/Fig03b_network_covid.png", labels[1]),
-    ("Figures/Fig03c_network_ukraine.png", labels[2]),
-    ("Figures/Fig03d_network_calm.png", "Calm period"),
-]
-dates_to_plot = crisis_dates + [calm_date]
 
-for (outpath, label), d in zip(outputs, dates_to_plot):
+# Build networks and extract giant components
+graphs = []
+for d in crisis_dates:
     df_day = df[df["Date"] == d]
     G = create_network(df_day)
+    G_gc = extract_giant_component(G)
+    graphs.append(G_gc)
+
+# Shared color/size scales: global min/max degree across all giant components
+degree_values = []
+for G_gc in graphs:
+    if G_gc is not None:
+        degree_values.extend(dict(G_gc.degree()).values())
+vmin = 0
+vmax = max(degree_values) if degree_values else 1
+
+# Full-width 1×3 multipanel figure (reduced space between panels)
+fig, axes = plt.subplots(1, 3, figsize=(18, 6), gridspec_kw={"wspace": 0.12})
+for ax, G_gc, label, d in zip(axes, graphs, labels, crisis_dates):
     date_str = pd.Timestamp(d).strftime("%Y-%m-%d")
-    plot_network_static(G, f"{label} ({date_str})", outpath)
-    print(f"Saved {outpath}")
+    ax.set_title(f"{label}\n({date_str})", fontsize=14)
+    ax.axis("off")
+    if G_gc is None or G_gc.number_of_edges() == 0:
+        ax.text(0.5, 0.5, "No edges", ha="center", va="center", fontsize=14)
+        continue
+    pos = nx.spring_layout(G_gc, seed=42, k=1.5)
+    degrees = dict(G_gc.degree())
+    node_sizes = [NODE_SIZE_BASE + NODE_SIZE_SCALE * degrees[n] for n in G_gc.nodes()]
+    node_colors = [degrees[n] for n in G_gc.nodes()]
+    nx.draw_networkx_nodes(G_gc, pos, node_size=node_sizes, node_color=node_colors,
+                          cmap=plt.cm.Blues, alpha=0.8, ax=ax, vmin=vmin, vmax=vmax)
+    nx.draw_networkx_edges(G_gc, pos, alpha=0.4, width=0.8, ax=ax)
+    labels_to_show = {n: n for n in G_gc.nodes() if degrees[n] >= LABEL_DEGREE_MIN}
+    # White text for dark blue nodes (high degree), black for light blue
+    norm = (vmax - vmin) or 1
+    white_nodes = {n: n for n in labels_to_show if (degrees[n] - vmin) / norm > 0.5}
+    black_nodes = {n: n for n in labels_to_show if (degrees[n] - vmin) / norm <= 0.5}
+    if white_nodes:
+        nx.draw_networkx_labels(G_gc, pos, labels=white_nodes, font_size=7, ax=ax, font_color="white")
+    if black_nodes:
+        nx.draw_networkx_labels(G_gc, pos, labels=black_nodes, font_size=7, ax=ax, font_color="black")
+
+# Horizontal colorbar at bottom (use subplots_adjust to avoid tight_layout warning)
+sm = plt.cm.ScalarMappable(cmap=plt.cm.Blues, norm=plt.Normalize(vmin=vmin, vmax=vmax))
+sm.set_array([])
+cbar = fig.colorbar(sm, ax=axes, orientation="horizontal", shrink=0.8, aspect=40,
+                    pad=0.08, label="Degree")
+
+fig.subplots_adjust(left=0.02, right=0.98, bottom=0.18, top=0.92, wspace=0.12)
+outpath = "Figures/Fig03_networks.png"
+plt.savefig(outpath, dpi=300)
+plt.savefig(outpath.replace(".png", ".svg"))
+plt.close()
+print(f"Saved {outpath}")

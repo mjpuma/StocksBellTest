@@ -2,7 +2,7 @@
 Permutation tests for network metrics: extreme vs normal periods.
 
 Requires Results/volatility_traces/regime_vol.csv and Results/networks.
-Outputs Figures/event_tables/*.png and Results/event_tables/*.csv
+Outputs Results/event_tables/*.csv and Results/event_tables/*.tex
 """
 
 import os
@@ -11,14 +11,11 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from statsmodels.stats.multitest import multipletests
-import matplotlib.pyplot as plt
 
 os.makedirs("Results/event_tables", exist_ok=True)
-os.makedirs("Figures/event_tables", exist_ok=True)
 
 VOL_FILE = "Results/volatility_traces/regime_vol.csv"
 METRICS_DIR = "Results/networks"
-OUT_TABLE_DIR = "Figures/event_tables"
 OUT_DATA_DIR = "Results/event_tables"
 SIG_THRESHOLD = 0.05
 VOL_THRESHOLD = 0.4
@@ -75,72 +72,35 @@ def cohens_d(x, y):
 
 def safe_fmt_scientific(x, precision=2):
     if pd.isna(x):
-        return "N/A"
+        return "---"
     try:
-        return np.format_float_scientific(float(x), precision=precision)
+        v = float(x)
+        if v < 1e-10:
+            return r"$<10^{-10}$"
+        return np.format_float_scientific(v, precision=precision)
     except Exception:
         return str(x)
 
-def plot_table(df_numeric, output_file, title, color_col="p_value", include_q=False):
-    df_num = df_numeric.copy()
-    df_disp = df_num.copy()
 
-    for col in ["Delta_obs", "Obs_ext", "Obs_norm", "Cohens_d", "Absolute_change"]:
-        if col in df_disp.columns:
-            df_disp[col] = df_disp[col].map(lambda x: f"{x:.3f}" if pd.notna(x) else "N/A")
-    if "Percent_change" in df_disp.columns:
-        df_disp["Percent_change"] = df_disp["Percent_change"].map(lambda x: f"{x:.1f}%" if pd.notna(x) else "N/A")
+def export_permtest_latex(res_df, out_tex, caption, label, metric_map=None):
+    """Export permutation results to LaTeX (condensed: Metric, % Change, p, q)."""
+    df = res_df.copy()
+    if metric_map:
+        df["Metric"] = df["Metric"].map(lambda m: metric_map.get(m, m))
+    df["% Change"] = df["Percent_change"].map(lambda x: f"{x:.1f}\\%" if pd.notna(x) else "---")
+    df["p"] = df["p_value"].apply(safe_fmt_scientific)
+    df["q"] = df["q_value"].apply(safe_fmt_scientific)
+    df = df[["Metric", "% Change", "p", "q"]]
+    tex_str = df.to_latex(index=False, escape=False, column_format="lccc")
+    with open(out_tex, "w") as f:
+        f.write("\\begin{table}[ht]\n")
+        f.write("\\centering\n")
+        f.write(f"\\caption{{{caption}}}\n")
+        f.write(f"\\label{{{label}}}\n")
+        f.write(tex_str)
+        f.write("\\end{table}\n")
+    print(f"Saved {out_tex}")
 
-    if "p_value" in df_disp.columns:
-        df_disp["p_value"] = df_disp["p_value"].map(lambda x: safe_fmt_scientific(x, precision=2))
-    if "q_value" in df_disp.columns:
-        df_disp["q_value"] = df_disp["q_value"].map(lambda x: safe_fmt_scientific(x, precision=2))
-
-    if not include_q and "q_value" in df_disp.columns:
-        df_disp = df_disp.drop(columns=["q_value"])
-
-    cell_colors = []
-    for _, row in df_num.iterrows():
-        val = row.get(color_col, np.nan)
-        if pd.isna(val):
-            color = "#ffffff"
-        elif float(val) < SIG_THRESHOLD:
-            color = "#add8e6" 
-        else:
-            color = "#f9c4b0"
-        cell_colors.append([color] * len(df_disp.columns))
-
-    n_rows, n_cols = df_disp.shape
-    fig_w = max(10, 1.4 * n_cols)
-    fig_h = max(2, 0.4 * n_rows + 1.0)
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
-    ax.axis("off")
-
-    table = ax.table(
-        cellText=df_disp.values,
-        colLabels=df_disp.columns,
-        cellColours=cell_colors,
-        loc="center",
-        cellLoc="center"
-    )
-    table.auto_set_font_size(False)
-    fontsize = 16 if n_cols <= 8 else max(12, int(16 - (n_cols - 8) * 0.5))
-    table.set_fontsize(fontsize)
-    table.scale(1, 1.2)
-    for (r, c), cell in table.get_celld().items():
-        if r == 0:
-            cell.set_text_props(weight="bold", fontsize=fontsize)
-            cell.set_facecolor("#f0f0f0")
-        else:
-            if df_disp.columns[c] == "Delta_obs":
-                cell.get_text().set_weight("bold")
-        cell.set_edgecolor("black")
-
-    plt.tight_layout()
-    plt.savefig(output_file, dpi=300, bbox_inches="tight")
-    plt.savefig(output_file.replace(".png", ".svg"), bbox_inches="tight")
-    plt.close()
-    print(f"Saved figure: {output_file}")
 
 def find_blocks(dates, mask):
     blocks = []
@@ -162,7 +122,7 @@ def find_blocks(dates, mask):
         b["length"] = b["idx_end"] - b["idx_start"] + 1
     return blocks
 
-vol_df = pd.read_csv(VOL_FILE, parse_dates=["Date"]).sort_values("Date").reset_index(drop=True)
+vol_df = pd.read_csv(VOL_FILE, parse_dates=["Date"]).dropna(subset=["Date"]).sort_values("Date").reset_index(drop=True)
 mask_extreme = vol_df["Volatility"].values > VOL_THRESHOLD
 ext_blocks = find_blocks(vol_df["Date"].values, mask_extreme)
 norm_blocks = find_blocks(vol_df["Date"].values, ~mask_extreme)
@@ -200,13 +160,13 @@ METRIC_NAME_MAP = {
     "NumEdges": "Number of Edges",
     "Density": "Density",
     "GiantComponentSizePct": "Giant Component Size",
-    "AvgClusteringCoeff": "Average Clustering \n Coefficient",
+    "AvgClusteringCoeff": "Avg. Clustering Coef.",
     "GlobalClustering": "Global Clustering",
     "Efficiency": "Efficiency",
-    "AvgShortestPathLength": "Average Shortest \n Path Length",
+    "AvgShortestPathLength": "Avg. Path Length",
     "Diameter": "Diameter",
     "DegreeCentralization": "Degree Centralization",
-    "BetweennessCentralization": "Betweenness \n Centralization",
+    "BetweennessCentralization": "Betweenness Centralization",
     "Modularity": "Modularity",
     "CommunitySizeEntropy": "Community Size Entropy",
     "NumCommunities": "Number of Communities",
@@ -214,95 +174,46 @@ METRIC_NAME_MAP = {
     "ScaleFreeAlpha": "Scale-Free Alpha"
 }
 
-def fmt(x):
-    if pd.isna(x):
-        return "N/A"
-    if isinstance(x, (int, float, np.number)):
-        return f"{x:.6f}"
-    return str(x)
-
-def plot_event_table_from_csv(event_id):
+def export_event_permtest_latex(event_id, ext, norm):
+    """Export event permutation results to LaTeX."""
     FILE = f"Results/event_tables/permtest_event{event_id}.csv"
-    OUTPUT = f"Figures/Table01_permtest_event{event_id}.png"
-
+    OUT_TEX = f"Results/event_tables/permtest_event{event_id}.tex"
     df = pd.read_csv(FILE)
-    df = df.drop(df.index[0])
-
-    df["Metric"] = df["Metric"].map(METRIC_NAME_MAP)
-
-    df = df.rename(columns={
-        "Obs_norm": "Normal",
-        "Obs_ext": "Extreme",
-        "Percent_change": "Percent Change (%)",
-        "Cohens_d": "Cohen's d",
-        "p_value": "p Value",
-        "q_value": "q Value"
-    })
-
-    df = df[[
-        "Metric",
-        "Normal",
-        "Extreme",
-        "Percent Change (%)",
-        "Cohen's d",
-        "p Value",
-        "q Value"
-    ]]
-
-    cols = list(df.columns)
-    cell_text = []
-    row_colors = []
-
-    for _, row in df.iterrows():
-        cell_text.append([
-            row["Metric"],
-            fmt(row["Normal"]),
-            fmt(row["Extreme"]),
-            fmt(row["Percent Change (%)"]),
-            fmt(row["Cohen's d"]),
-            fmt(row["p Value"]),
-            fmt(row["q Value"])
-        ])
-
-        if not pd.isna(row["q Value"]) and row["q Value"] < SIG_THRESHOLD:
-            row_colors.append(["#b3d9ff"] * len(cols))
-        else:
-            row_colors.append(["white"] * len(cols))
-
-    fig, ax = plt.subplots(figsize=(12, 0.6 * len(df) + 1.5))
-    ax.axis("off")
-
-    tbl = ax.table(
-        cellText=cell_text,
-        colLabels=cols,
-        cellColours=row_colors,
-        cellLoc="center",
-        loc="center"
+    # Drop NumNodes (no variation)
+    df = df[df["Metric"] != "NumNodes"]
+    caption = (
+        f"Permutation test Event {event_id}: "
+        f"{pd.Timestamp(ext['start']).date()}--{pd.Timestamp(ext['end']).date()} vs "
+        f"{pd.Timestamp(norm['start']).date()}--{pd.Timestamp(norm['end']).date()}."
     )
-
-    tbl.auto_set_font_size(False)
-    tbl.set_fontsize(16)
-    tbl.scale(1, 1.12)
-
-    for (row, col), cell in tbl.get_celld().items():
-        if row == 0:
-            cell.set_text_props(weight="bold")
-            cell.set_facecolor("#e8e8e8")
-        cell.set_edgecolor("black")
-        cell.set_height(0.03)
-
-    plt.tight_layout()
-    plt.savefig(OUTPUT, dpi=300, bbox_inches="tight")
-    plt.savefig(OUTPUT.replace(".png", ".svg"), bbox_inches="tight")
-    plt.close(fig)
-
-    print(f"Saved {OUTPUT}")
+    export_permtest_latex(df, OUT_TEX, caption, f"tab:permtest_event{event_id}", METRIC_NAME_MAP)
 
 #========================================================================================================
 #Main Loop
 #========================================================================================================
 
 if __name__ == "__main__":
+    import sys
+    export_only = "--export-only" in sys.argv
+    if export_only:
+        # Export LaTeX from existing CSVs (skip permutation tests)
+        for i in range(1, N_EVENTS + 1):
+            csv_path = os.path.join(OUT_DATA_DIR, f"permtest_event{i}.csv")
+            if os.path.exists(csv_path):
+                ext = matched_pairs[i - 1]["ext"]
+                norm = matched_pairs[i - 1]["norm"]
+                export_event_permtest_latex(i, ext, norm)
+        agg_path = os.path.join(OUT_DATA_DIR, "permtest_aggregate.csv")
+        if os.path.exists(agg_path):
+            agg_df = pd.read_csv(agg_path)
+            export_permtest_latex(
+                agg_df, os.path.join(OUT_DATA_DIR, "permtest_aggregate.tex"),
+                "Permutation test aggregate: all extreme vs all normal days.",
+                "tab:permtest_aggregate", METRIC_NAME_MAP
+            )
+        print("LaTeX export done.")
+        sys.exit(0)
+
     all_metrics = load_all_metrics()
     print(f"Loaded {len(all_metrics)} metric rows with columns: {list(all_metrics.columns)}")
 
@@ -349,13 +260,7 @@ if __name__ == "__main__":
         out_csv = os.path.join(OUT_DATA_DIR, f"permtest_event{i}.csv")
         res_df.to_csv(out_csv, index=False)
 
-        title = (
-            f"Permutation Test — Event {i}: "
-            f"{pd.Timestamp(ext['start']).date()}→{pd.Timestamp(ext['end']).date()} "
-            f"vs {pd.Timestamp(norm['start']).date()}→{pd.Timestamp(norm['end']).date()}"
-        )
-
-        plot_event_table_from_csv(i)
+        export_event_permtest_latex(i, ext, norm)
 
         print(f"Event {i} done — saved {out_csv}")
 
@@ -397,11 +302,13 @@ if __name__ == "__main__":
     agg_csv = os.path.join(OUT_DATA_DIR, "permtest_aggregate.csv")
     agg_df.to_csv(agg_csv, index=False)
 
-    agg_title = "Permutation Test — Aggregate: All Extreme vs All Normal Days"
-    fig_p = os.path.join("Figures", "Table01_permtest_aggregate_pvals.png")
-    fig_q = os.path.join("Figures", "Table01_permtest_aggregate_qvals.png")
-    plot_table(agg_df, fig_p, agg_title + " (p-values)", color_col="p_value", include_q=False)
-    plot_table(agg_df, fig_q, agg_title + " (q-values)", color_col="q_value", include_q=True)
+    agg_tex = os.path.join(OUT_DATA_DIR, "permtest_aggregate.tex")
+    export_permtest_latex(
+        agg_df, agg_tex,
+        "Permutation test aggregate: all extreme vs all normal days.",
+        "tab:permtest_aggregate",
+        METRIC_NAME_MAP
+    )
 
     print(f"Aggregate comparison done — saved {agg_csv}")
 

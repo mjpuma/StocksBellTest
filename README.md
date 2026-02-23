@@ -30,8 +30,8 @@ Use `MPLBACKEND=Agg` if running headless (e.g., on a server) to avoid blocking o
 | 5 | `2Fig2.py` | `Results/networks/` | `Fig02_network_metrics.*` |
 | 6 | `2Fig3_networks.py` | `Results/s1_values.csv`, `Results/volatility_traces/` | `Fig03a–d_network_*.png` |
 | 7 | `3.py` | `Results/volatility_traces/`, `Results/networks/` | `Table01_permtest_*.*`, `Results/event_tables/*.csv` |
-| 8 | `Granger_causality.py` | `Results/violation_pct.csv`, `Results/volatility_traces/regime_vol.csv` | `Results/granger_results.csv`, `Table02_granger_causality.*` |
-| 9 | `timing_analysis.py` | `Results/violation_pct.csv`, `Results/volatility_traces/regime_vol.csv` | `Fig04–05_timing_*.*`, `Table03_timing_lead_lag.*` |
+| 8 | `Granger_causality.py` | `Results/violation_pct.csv`, `Results/volatility_traces/regime_vol.csv` | `Results/granger_results.csv`, `Fig05_granger_causality.*` |
+| 9 | `timing_analysis.py` | `Results/violation_pct.csv`, `Results/volatility_traces/regime_vol.csv` | `Figures/Supplement/FigS1_*`, `Fig04_timing_lead_lag.*`, `Table03_timing_lead_lag.*` |
 
 ## Data
 
@@ -46,19 +46,21 @@ Use `MPLBACKEND=Agg` if running headless (e.g., on a server) to avoid blocking o
 
 **Fig01. Volatility methods and S₁ violation percentage.** (A) Annualized volatility of the S&P GSCI: rolling realized (20-day), GARCH(1,1), and regime-switching. Dotted line indicates the 40% threshold used for extreme-period classification. (B) Daily fraction of ticker pairs with |S₁| > 2 (Bell inequality violations).
 
-**Fig02. Network metrics over time.** (A) Giant component size (fraction of nodes in largest connected component), average clustering coefficient, and density. (B) Scale-free exponent α from power-law fit to degree distribution, P(k) ∝ k^(-α). (C) Community size entropy. (D) Number of communities from greedy modularity. Vertical dashed lines mark the 2008 Financial Crisis, COVID-19, and Ukraine War.
+**Fig02. Network topology metrics as structural indicators of market fragility.** Panels show density, scale-free alpha, clustering coefficient, and community entropy over time, with vertical lines marking the 2008, COVID, and Ukraine crises.
 
-**Fig03a–d. Comparative network snapshots.** Violation networks (edges = pairs with S₁ > 2) at peak of each crisis and during a calm period. Node size ∝ degree.
+**Fig03. Network structure during crisis periods.** Giant components of S₁-based correlation networks at peak volatility during the 2008, COVID-19, and Ukraine crises. Node size and color indicate degree.
 
-**Fig04. Timing cross-correlation.** Cross-correlation of violation % vs regime volatility at lags −30 to +30 days (negative lag = violation leads).
+**Fig04. Lead–lag by crisis.** Bar chart of Δ (days) between violation and volatility peaks for each crisis (positive = violation peaks after volatility).
 
-**Fig05. Event alignment.** Dual-axis plots of violation % and volatility around each crisis window.
+**Fig05. Granger causality by crisis.** S₁↔volatility tests at lags 1–10 for 2008, COVID-19, and Ukraine. Crisis-specific patterns differ from aggregate.
+
+**FigS1 (Supplement). Timing cross-correlation.** Aggregate cross-correlation of violation % vs regime volatility at lags −30 to +30 days.
 
 ### Tables
 
 **Table01. Permutation test results.** Network metrics compared between extreme and normal periods for each event (2008, COVID-19, Ukraine War) and in aggregate. Reports observed means, percent change, Cohen's d, and p- and q-values (Benjamini–Hochberg FDR).
 
-**Table02. Granger causality.** Tests for lead–lag relationships between violation percentage and regime-switching volatility (both directions, lags 1–20).
+**Table02. Granger causality.** Crisis-specific tests for S₁↔volatility (both directions, lags 1–10).
 
 **Table03. Timing lead–lag.** For each event, dates of violation and volatility peaks and which series leads.
 
