@@ -1,0 +1,865 @@
+\documentclass[12pt,a4paper]{article}
+
+%% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm, headheight=15pt]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[most]{tcolorbox}
+\usepackage{parskip}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+
+%% ── Colours ───────────────────────────────────────────────────────────────────
+\definecolor{laymanblue}{RGB}{215,232,252}
+\definecolor{laymanframe}{RGB}{60,120,200}
+\definecolor{mathgreen}{RGB}{228,248,228}
+\definecolor{mathgreenframe}{RGB}{40,140,40}
+\definecolor{warnbg}{RGB}{255,244,215}
+\definecolor{warnframe}{RGB}{190,130,0}
+\definecolor{examplebg}{RGB}{245,235,255}
+\definecolor{exampleframe}{RGB}{130,60,180}
+\definecolor{keyblue}{RGB}{30,80,160}
+\definecolor{keygray}{RGB}{90,90,90}
+
+%% ── tcolorbox environments ────────────────────────────────────────────────────
+\tcbuselibrary{breakable, skins}
+
+\newtcolorbox{laymanbox}[1][Intuition]{
+  breakable, enhanced,
+  colback=laymanblue, colframe=laymanframe,
+  coltitle=white, fonttitle=\bfseries\small,
+  title={$\bigstar$\enspace #1},
+  arc=4pt, boxrule=1.2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+}
+
+\newtcolorbox{mathbox}[1][Mathematical Detail]{
+  breakable, enhanced,
+  colback=mathgreen, colframe=mathgreenframe,
+  coltitle=white, fonttitle=\bfseries\small,
+  title={$\Sigma$\enspace #1},
+  arc=4pt, boxrule=1.2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+}
+
+\newtcolorbox{cautionbox}[1][Caveat / Key Assumption]{
+  breakable, enhanced,
+  colback=warnbg, colframe=warnframe,
+  coltitle=white, fonttitle=\bfseries\small,
+  title={$\triangle$\enspace #1},
+  arc=4pt, boxrule=1.2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+}
+
+\newtcolorbox{examplebox}[1][Worked Example]{
+  breakable, enhanced,
+  colback=examplebg, colframe=exampleframe,
+  coltitle=white, fonttitle=\bfseries\small,
+  title={$\blacktriangleright$\enspace #1},
+  arc=4pt, boxrule=1.2pt,
+  left=6pt, right=6pt, top=4pt, bottom=4pt,
+}
+
+%% ── Theorem styles ────────────────────────────────────────────────────────────
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}[section]
+\newtheorem{prop}{Proposition}[section]
+
+%% ── Macros ────────────────────────────────────────────────────────────────────
+\newcommand{\Ecorr}[2]{\mathbb{E}(#1,\,#2)}
+\newcommand{\Sone}{S_1}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\sgn}{\operatorname{sign}}
+\newcommand{\ind}[1]{\mathbf{1}[#1]}
+
+%% ── Page style ────────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Bell--CHSH $S_1$ in Financial Markets}
+\lhead{\small Step-by-Step Derivation}
+\rfoot{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=keyblue, urlcolor=keyblue, citecolor=keyblue,
+  pdftitle={Bell-CHSH S1: A Complete Step-by-Step Explanation},
+}
+
+\setstretch{1.15}
+
+%% ═══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+%% ═══════════════════════════════════════════════════════════════════════════════
+
+\begin{titlepage}
+\centering\vspace*{3cm}
+{\LARGE\bfseries\color{keyblue}
+  The Bell--CHSH $S_1$ Statistic in Financial Markets\\[0.8em]}
+{\large A Complete, Step-by-Step Derivation\\
+with Mathematical Justifications and Intuitive Explanations}\\[2.5cm]
+{\large\color{keygray}
+  Companion document to:\\[0.4em]
+  \textit{Bell Inequality Violations in Agriculture Equity Networks}\\[0.5em]
+  \texttt{github.com/mjpuma/StocksBellTest}}\\[3cm]
+{\normalsize\color{keygray}
+  Based on the methodology of Zarifian et al.\ (2025),\\
+  \textit{Journal of Finance and Data Science}, 100164.}\\[2cm]
+{\small\color{keygray} February 2026}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+%% ── Section 1 ─────────────────────────────────────────────────────────────────
+\section{Why Are We Doing This? The Big Picture}
+
+\begin{laymanbox}[The Problem in Plain English]
+Standard tools for measuring how two stocks move together---like Pearson
+correlation---have a fundamental weakness: they cannot tell the difference
+between two stocks that are correlated because of a \emph{shared hidden cause}
+(both react to rising oil prices) versus two stocks whose co-movement is
+structurally deeper, in a way that no single hidden cause can explain.
+
+During financial crises, markets do not just become \emph{more} correlated;
+they become correlated in a qualitatively different way. The Bell--CHSH test
+is a tool borrowed from quantum physics that can detect this qualitative
+difference. If the $S_1$ statistic exceeds~2, we have mathematical proof
+that ordinary ``shared hidden-variable'' stories are insufficient.
+\end{laymanbox}
+
+The Bell--CHSH inequality was originally developed by John Bell (1964) and
+Clauser, Horne, Shimony, and Holt (1969) to probe whether quantum mechanics
+is fundamentally different from classical physics. The central insight is that
+\emph{any} classical model with a shared hidden variable must satisfy a specific
+algebraic bound. Violating that bound is a rigorous signal that the model is wrong.
+
+We apply this logic to pairs of agricultural stocks. The question is not
+``are these two stocks correlated?'' but rather ``is the pattern of co-movement
+consistent with \emph{any} classical hidden-variable story?'' If $|S_1| > 2$,
+the answer is no---and that violation is our crisis indicator.
+
+\medskip
+\noindent\textbf{Road map.} We walk through every component in sequence:
+
+\begin{enumerate}[label=\textbf{Step \arabic*.}, leftmargin=*, itemsep=2pt]
+  \item Raw data: stock returns
+  \item Converting returns to binary outcomes (signs)
+  \item Defining measurement regimes via threshold masks
+  \item Computing four conditional expectation values
+  \item Combining them into $S_1$
+  \item The Bell bound: why $|S_1|>2$ is special
+  \item Rolling windows: turning $S_1$ into a time series
+  \item Aggregating across pairs: the violation percentage
+\end{enumerate}
+
+%% ── Section 2 ─────────────────────────────────────────────────────────────────
+\section{Step 1 --- Raw Data: Stock Returns}
+
+\subsection{What we start with}
+
+We work with daily adjusted close prices $P_{i,t}$ for 53 agriculture-related
+stocks (ticker index $i$, trading date $t$), covering 2000-01-01 to the present.
+
+\subsection{Computing percentage returns}
+
+\begin{defn}[Daily return]
+  \begin{equation}\label{eq:return}
+    r_{i,t} = \frac{P_{i,t} - P_{i,t-1}}{P_{i,t-1}}
+  \end{equation}
+\end{defn}
+
+\begin{mathbox}[Why percentage returns, not log returns?]
+Log returns $\ln(P_t / P_{t-1})$ are popular because they are additive over
+time. For daily moves, $|r| \ll 1$ in normal conditions, and
+$\ln(1+r) \approx r$, so both measures are nearly identical. Our pipeline uses
+only the \emph{sign} and whether the \emph{magnitude} exceeds~5\%. Both
+properties are identical for log and percentage returns at any realistic daily
+frequency. Percentage returns are used for transparency and interpretability.
+\end{mathbox}
+
+\begin{laymanbox}[Returns in plain English]
+A return of $r = 0.03$ means the stock rose 3\% that day.
+A return of $r = -0.07$ means it fell 7\%. We will shortly reduce each return
+to just two pieces of information: (a)~did it go up or down, and (b)~was the
+move large (above~5\%) or small?
+\end{laymanbox}
+
+\subsection{Stock pairs}
+
+We form all unordered pairs $(A, B)$ with $A \neq B$. For $n = 53$ tickers:
+\[
+  \binom{53}{2} = 1{,}378 \text{ pairs}
+\]
+All subsequent steps operate on a single pair $(A, B)$ over a rolling window.
+
+%% ── Section 3 ─────────────────────────────────────────────────────────────────
+\section{Step 2 --- Binary Outcomes: The Sign of Returns}
+
+\subsection{Why binary outcomes?}
+
+The Bell--CHSH inequality is stated for \textbf{binary} outcomes: each
+measurement must yield either $+1$ or $-1$. In physics this corresponds to
+spin measurements (spin up or spin down). In our financial application, the
+natural binary is whether a stock rose or fell on a given day.
+
+\begin{defn}[Binary outcome]
+  \begin{equation}\label{eq:sign}
+    a_i = \sgn(x_i) =
+    \begin{cases}
+      +1 & x_i > 0 \quad (\text{stock rose}) \\
+      -1 & x_i < 0 \quad (\text{stock fell}) \\
+       0 & x_i = 0 \quad (\text{excluded})
+    \end{cases}
+  \end{equation}
+  and analogously $b_i = \sgn(y_i)$ for stock $B$, where $x_i = r_{A,i}$
+  and $y_i = r_{B,i}$ within the rolling window.
+\end{defn}
+
+\begin{laymanbox}[Signs in plain English]
+We simply ask: did the stock go up or down today?\\[3pt]
+Up $\to +1$. \quad Down $\to -1$. \quad Unchanged $\to$ ignored.\\[6pt]
+The \emph{product} $a_i b_i$ tells us whether both stocks moved the same
+way ($+1 \cdot +1 = +1$ or $-1 \cdot -1 = +1$) or in opposite directions
+($+1 \cdot -1 = -1$).
+\end{laymanbox}
+
+\subsection{Interpreting the product \texorpdfstring{$a_i b_i$}{a\_i b\_i}}
+
+\begin{align*}
+  a_i b_i = +1 &\implies \text{same direction (co-movement)}\\
+  a_i b_i = -1 &\implies \text{opposite directions (divergence)}
+\end{align*}
+
+A simple average of $a_i b_i$ over many days gives a correlation-like measure
+in $[-1, +1]$. Bell--CHSH goes further by conditioning on whether moves were
+large or small---and this conditioning is what creates the statistical power
+to detect non-classical behavior.
+
+%% ── Section 4 ─────────────────────────────────────────────────────────────────
+\section{Step 3 --- Measurement Settings: The Four Threshold Masks}
+
+\subsection{Why we need ``settings''}
+
+In the original Bell experiment, Alice chooses a measurement setting
+$x \in \{0, 1\}$ and Bob chooses $y \in \{0, 1\}$, creating four setting
+combinations $(x, y) \in \{(0,0),(0,1),(1,0),(1,1)\}$. The CHSH inequality
+uses all four to form $S_1$.
+
+For stocks, we define two ``settings'' via the \emph{magnitude} of returns:
+\begin{itemize}
+  \item Setting~$0$ (large / ``strong''): $|r| \geq \tau$
+  \item Setting~$1$ (small / ``weak''): $|r| < \tau$
+\end{itemize}
+with fixed threshold $\tau = 0.05$ (5\%). This creates four regime combinations.
+
+\begin{laymanbox}[The four regimes in plain English]
+  Every day, each stock makes either a big move ($\geq 5\%$) or a small move
+  ($< 5\%$). The pair of stocks together fall into one of four regimes:
+
+  \medskip
+  \begin{center}
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lllc}
+    \toprule
+    Stock $A$ & Stock $B$ & Regime & Notation \\
+    \midrule
+    Big ($\geq 5\%$) & Big ($\geq 5\%$) & both large & $ab$ \\
+    Big ($\geq 5\%$) & Small ($< 5\%$)  & A large, B small & $ab'$ \\
+    Small ($< 5\%$)  & Big ($\geq 5\%$) & A small, B large & $a'b$ \\
+    Small ($< 5\%$)  & Small ($< 5\%$)  & both small & $a'b'$ \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \medskip
+  Each trading day belongs to exactly one regime (they are mutually exclusive
+  and exhaustive). The Bell test asks: does the direction agreement (up/down)
+  differ systematically across these four regimes in a way that no hidden
+  common factor can explain?
+\end{laymanbox}
+
+\subsection{Formal definition of the four masks}
+
+\begin{defn}[Threshold masks]\label{def:masks}
+  Fix $\tau = 0.05$. For each day $i$ in the window:
+  \begin{align}
+    m_{ab,i}   &= \ind{|x_i|\geq\tau}\cdot\ind{|y_i|\geq\tau}
+                 \quad\text{(both large)}\label{eq:mab}\\
+    m_{ab',i}  &= \ind{|x_i|\geq\tau}\cdot\ind{|y_i|<\tau}
+                 \quad\text{(A large, B small)}\label{eq:mabp}\\
+    m_{a'b,i}  &= \ind{|x_i|<\tau}\cdot\ind{|y_i|\geq\tau}
+                 \quad\text{(A small, B large)}\label{eq:mapb}\\
+    m_{a'b',i} &= \ind{|x_i|<\tau}\cdot\ind{|y_i|<\tau}
+                 \quad\text{(both small)}\label{eq:mapbp}
+  \end{align}
+\end{defn}
+
+\begin{mathbox}[Partition property]
+  The four masks partition each day $i$ exactly:
+  \[
+    m_{ab,i} + m_{ab',i} + m_{a'b,i} + m_{a'b',i} = 1 \quad \forall i
+  \]
+  This holds because $\ind{|x|\geq\tau} + \ind{|x|<\tau} = 1$ for any
+  $x \neq 0$, and taking the Cartesian product over $x$ and $y$ gives four
+  disjoint events that together cover the entire sample space.
+  (Days with $x_i = 0$ or $y_i = 0$ have $\sgn = 0$ and are excluded.)
+\end{mathbox}
+
+\subsection{Justification of \texorpdfstring{$\tau = 0.05$}{tau = 0.05}}
+
+\begin{enumerate}[label=(\roman*), itemsep=4pt]
+  \item \textbf{Economic meaning.} A 5\% daily move is approximately 2--3
+  standard deviations of typical daily equity volatility ($\sigma_{\text{daily}}
+  \approx 1.5\text{--}2.5\%$). This threshold separates routine trading from
+  genuine event-driven price changes---the kind driven by earnings surprises,
+  geopolitical shocks, or contagion during crises.
+
+  \item \textbf{Non-degeneracy.} With a 20-day window, $\tau = 0.05$ typically
+  places 1--5 observations in each regime cell, giving a non-trivial but
+  computationally feasible split. If $\tau$ is too low, almost every day
+  qualifies as ``large'' and the ``small'' regime degenerates (too few
+  observations). If $\tau$ is too high, the ``large'' regime degenerates.
+
+  \item \textbf{Literature consistency.} Zarifian et al.\ (2025) use the same
+  threshold and confirm qualitative robustness across $\tau \in [0.01, 0.05]$.
+\end{enumerate}
+
+\begin{cautionbox}[The threshold is a modelling choice, not a universal law]
+  The Bell \emph{bound} of~2 is derived mathematically and is independent of
+  $\tau$. But the \emph{values} of $S_1$ depend on $\tau$. Results should
+  always be reported with a sensitivity analysis varying $\tau$.
+\end{cautionbox}
+
+%% ── Section 5 ─────────────────────────────────────────────────────────────────
+\section{Step 4 --- The Four Conditional Expectation Values}
+
+\subsection{Rolling windows}
+
+All computations use a rolling window of $W = 20$ trading days ending on date
+$t$, containing observations $i = 1, \ldots, 20$. This window is the same
+length as the rolling realized volatility computation, making comparisons direct.
+
+\begin{laymanbox}[Why 20 days?]
+  Twenty trading days is roughly one calendar month. It is long enough to
+  populate each of the four regime cells with at least a few observations
+  (needed for stable estimates) and short enough to respond quickly to
+  emerging market stress. Longer windows would smooth out the crisis spikes;
+  shorter windows would be too noisy.
+\end{laymanbox}
+
+\subsection{Computing each expectation}
+
+\begin{defn}[Conditional expectation]\label{def:expect}
+  For mask $m_{ab}$:
+  \begin{equation}\label{eq:Eab}
+    \Ecorr{a}{b} = \frac{\displaystyle\sum_{i=1}^{W} a_i\,b_i\,m_{ab,i}}
+                        {\displaystyle\sum_{i=1}^{W} m_{ab,i}}
+  \end{equation}
+  and analogously $\Ecorr{a}{b'}$, $\Ecorr{a'}{b}$, $\Ecorr{a'}{b'}$ using
+  masks $m_{ab'}$, $m_{a'b}$, $m_{a'b'}$ respectively.
+  If the denominator is zero, the expectation is undefined and the pair
+  is excluded from the violation count for date $t$.
+\end{defn}
+
+\begin{mathbox}[Unpacking Equation~\eqref{eq:Eab}]
+  \textbf{Numerator:} $\sum_i a_i b_i m_{ab,i}$
+
+  Sums the sign products over days when \emph{both} stocks made large moves.
+  On days when at least one stock made a small move, $m_{ab,i} = 0$ so
+  those days contribute nothing.
+
+  \textbf{Denominator:} $\sum_i m_{ab,i}$
+
+  Counts how many days in the window had both stocks making large moves.
+  This is the effective sample size for this regime.
+
+  \textbf{Result:} The ratio lies in $[-1, +1]$ and equals the average
+  direction agreement \emph{among large-large days only}:
+  \begin{align*}
+    \Ecorr{a}{b} = +1 &\implies \text{whenever both moved a lot, they moved the same way}\\
+    \Ecorr{a}{b} = -1 &\implies \text{whenever both moved a lot, they moved opposite ways}\\
+    \Ecorr{a}{b} = 0  &\implies \text{no consistent pattern in large-large days}
+  \end{align*}
+\end{mathbox}
+
+\begin{examplebox}[Numerical Example: 5 days (simplified)]
+  \begin{center}
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{cccccccc}
+    \toprule
+    Day & $x_i$ & $y_i$ & $a_i$ & $b_i$ & $a_ib_i$ &
+    $|x|\!\geq\!0.05$ & $|y|\!\geq\!0.05$ \\
+    \midrule
+    1 & $+0.07$ & $+0.06$ & $+1$ & $+1$ & $+1$ & \checkmark & \checkmark \\
+    2 & $-0.08$ & $-0.09$ & $-1$ & $-1$ & $+1$ & \checkmark & \checkmark \\
+    3 & $+0.02$ & $+0.03$ & $+1$ & $+1$ & $+1$ & $\times$   & $\times$   \\
+    4 & $+0.06$ & $-0.01$ & $+1$ & $-1$ & $-1$ & \checkmark & $\times$   \\
+    5 & $-0.07$ & $+0.08$ & $-1$ & $+1$ & $-1$ & \checkmark & \checkmark \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \medskip
+  \textbf{$\Ecorr{a}{b}$} (mask $m_{ab}$: both large): Days 1, 2, 5.
+  \[
+    \Ecorr{a}{b} = \frac{(+1)+(+1)+(-1)}{3} = \frac{1}{3} \approx +0.33
+  \]
+
+  \textbf{$\Ecorr{a}{b'}$} (mask $m_{ab'}$: A large, B small): Day 4 only.
+  \[
+    \Ecorr{a}{b'} = \frac{-1}{1} = -1
+  \]
+
+  \textbf{$\Ecorr{a'}{b}$} (mask $m_{a'b}$: A small, B large): No days.
+  $\Rightarrow$ \emph{undefined}; pair excluded from violation count.
+
+  \textbf{$\Ecorr{a'}{b'}$} (mask $m_{a'b'}$: both small): Day 3 only.
+  \[
+    \Ecorr{a'}{b'} = \frac{+1}{1} = +1
+  \]
+\end{examplebox}
+
+%% ── Section 6 ─────────────────────────────────────────────────────────────────
+\section{Step 5 --- Assembling \texorpdfstring{$S_1$}{S1}}
+
+\subsection{The CHSH correlator}
+
+\begin{defn}[Bell--CHSH $S_1$ correlator]\label{def:s1}
+  \begin{equation}\label{eq:s1}
+    \boxed{S_1 = \Ecorr{a}{b} + \Ecorr{a}{b'} + \Ecorr{a'}{b} - \Ecorr{a'}{b'}}
+  \end{equation}
+\end{defn}
+
+\begin{laymanbox}[$S_1$ in plain English]
+  We compute four ``direction-agreement scores,'' one for each regime:
+  \begin{itemize}[itemsep=2pt]
+    \item $\Ecorr{a}{b}$: agreement when \emph{both} stocks made big moves
+    \item $\Ecorr{a}{b'}$: agreement when \emph{only A} made a big move
+    \item $\Ecorr{a'}{b}$: agreement when \emph{only B} made a big move
+    \item $\Ecorr{a'}{b'}$: agreement when \emph{neither} made a big move
+  \end{itemize}
+  We add the first three and \emph{subtract} the last. The reason for the
+  minus sign is algebraic (see Section~\ref{sec:bound}): it is the combination
+  that has a classical bound of exactly~2.
+\end{laymanbox}
+
+\subsection{Why this particular sign pattern \texorpdfstring{$(+,+,+,-)$}{(+,+,+,-)}?}
+
+There are four CHSH variants, all of which obey $|S_k| \leq 2$ classically:
+\begin{align}
+  S_1 &= +\Ecorr{a}{b} + \Ecorr{a}{b'} + \Ecorr{a'}{b} - \Ecorr{a'}{b'} \\
+  S_2 &= +\Ecorr{a}{b} + \Ecorr{a}{b'} - \Ecorr{a'}{b} + \Ecorr{a'}{b'} \\
+  S_3 &= +\Ecorr{a}{b} - \Ecorr{a}{b'} + \Ecorr{a'}{b} + \Ecorr{a'}{b'} \\
+  S_4 &= -\Ecorr{a}{b} + \Ecorr{a}{b'} + \Ecorr{a'}{b} + \Ecorr{a'}{b'}
+\end{align}
+
+\begin{mathbox}[Why $S_1$ is the preferred form for financial data]
+  Rewriting $S_1$:
+  \[
+    S_1 = \underbrace{\Ecorr{a}{b} + \Ecorr{a}{b'} + \Ecorr{a'}{b}}_{\text{all involve at least one large move}} - \underbrace{\Ecorr{a'}{b'}}_{\text{both small}}
+  \]
+  The three positive terms capture correlations in \emph{at least one} extreme
+  regime. The negative term is the background correlation in quiet periods.
+  $S_1$ therefore measures \emph{excess} co-movement during volatile episodes
+  relative to calm conditions---which is exactly what a crisis indicator should
+  capture. The other three variants ($S_2, S_3, S_4$) mix large-move and
+  small-move terms in both the positive and negative sums, losing this
+  interpretation. This is the argument of Zarifian et al.\ (2025) for
+  using $S_1$ exclusively.
+\end{mathbox}
+
+\subsection{Numerical range}
+
+Each expectation term lies in $[-1, +1]$, so:
+\[
+  S_1 \in [-4,\, +4]
+\]
+because $|\!\pm 1 \pm 1 \pm 1 \mp (\mp 1)| \leq 4$.
+
+%% ── Section 7 ─────────────────────────────────────────────────────────────────
+\section{Step 6 --- The Bell Bound: Why \texorpdfstring{$|S_1| > 2$}{|S1| > 2} Is Special}
+\label{sec:bound}
+
+This is the mathematical heart of the method. We prove from first principles
+that any classical shared-factor model must satisfy $|S_1| \leq 2$.
+
+\subsection{What is a local hidden-variable model?}
+
+\begin{defn}[Local Hidden-Variable (LHV) Model]\label{def:lhv}
+  An LHV model for a stock pair assumes an unobserved random variable
+  $\lambda$ (the ``hidden variable'' or ``common factor'') such that:
+  \begin{enumerate}[label=(\roman*), itemsep=2pt]
+    \item Stock $A$'s outcome depends only on $\lambda$ and $A$'s own regime
+    indicator $x \in \{0,1\}$, not on stock $B$.
+    \item Stock $B$'s outcome depends only on $\lambda$ and $B$'s own regime
+    indicator $y \in \{0,1\}$, not on stock $A$.
+    \item $\lambda$ can be of any form and any dimension.
+  \end{enumerate}
+  Formally, outcomes are generated by response functions $a(x,\lambda)\in\{-1,+1\}$
+  and $b(y,\lambda)\in\{-1,+1\}$, and the joint probability satisfies:
+  \begin{equation}\label{eq:lhv}
+    P(a,b \mid x,y) = \int P(a \mid x,\lambda)\,P(b \mid y,\lambda)\,p(\lambda)\,d\lambda
+  \end{equation}
+\end{defn}
+
+\begin{laymanbox}[LHV in plain English]
+  An LHV model says: ``There is some shared cause $\lambda$---perhaps market
+  sentiment, the Fed funds rate expectation, the dollar index, or anything
+  else---that influences both stocks. Once you know $\lambda$, the two stocks
+  behave \emph{independently} of each other. All correlation between them is
+  entirely due to this shared cause.''
+
+  This is the implicit assumption behind Pearson correlation: if two stocks
+  are correlated, they share a common driver. Bell's theorem says:
+  if $|S_1| > 2$, no such story works---no matter how many common factors
+  you posit, no matter how complex.
+\end{laymanbox}
+
+\subsection{Proof that LHV models satisfy \texorpdfstring{$|S_1| \leq 2$}{|S1| <= 2}}
+
+\begin{prop}[Bell--CHSH inequality]\label{prop:bell}
+  Under any LHV model as in Definition~\ref{def:lhv},
+  \[
+    |S_1| \leq 2
+  \]
+\end{prop}
+
+\begin{proof}
+  For a fixed realization of $\lambda$, denote the four deterministic outcomes
+  (one for each setting combination):
+  \[
+    a_0 = a(0,\lambda),\quad
+    a_1 = a(1,\lambda),\quad
+    b_0 = b(0,\lambda),\quad
+    b_1 = b(1,\lambda),
+    \quad a_k, b_k \in \{-1, +1\}
+  \]
+  The realized CHSH expression for this $\lambda$ is:
+  \begin{equation}\label{eq:realized}
+    s(\lambda) = a_0 b_0 + a_0 b_1 + a_1 b_0 - a_1 b_1
+               = a_0(b_0 + b_1) + a_1(b_0 - b_1)
+  \end{equation}
+  Since $b_0, b_1 \in \{-1, +1\}$, exactly one of two cases holds:
+
+  \medskip
+  \textbf{Case 1: $b_0 = b_1$.}
+  Then $b_0 + b_1 = \pm 2$ and $b_0 - b_1 = 0$, giving
+  $s(\lambda) = a_0(\pm 2) + 0 = \pm 2$.
+
+  \medskip
+  \textbf{Case 2: $b_0 = -b_1$.}
+  Then $b_0 + b_1 = 0$ and $b_0 - b_1 = \pm 2$, giving
+  $s(\lambda) = 0 + a_1(\pm 2) = \pm 2$.
+
+  \medskip
+  In both cases $|s(\lambda)| = 2$ for every realization of $\lambda$.
+  The observed $S_1$ is an average over $\lambda$:
+  \[
+    S_1 = \int s(\lambda)\, p(\lambda)\, d\lambda
+  \]
+  By the triangle inequality:
+  \[
+    |S_1| \leq \int |s(\lambda)|\, p(\lambda)\, d\lambda = 2\int p(\lambda)\,d\lambda = 2
+  \qedhere\]
+\end{proof}
+
+\begin{mathbox}[The key algebraic insight]
+  The proof shows that for \emph{any single} realization of the hidden variable,
+  the expression $a_0 b_0 + a_0 b_1 + a_1 b_0 - a_1 b_1$ always equals exactly
+  $\pm 2$---never more, never less. This is pure algebra, requiring only
+  $b_0, b_1 \in \{-1, +1\}$. Averaging over $\lambda$ cannot push the result
+  beyond $\pm 2$.
+
+  Therefore, \emph{observing} $|S_1| > 2$ in data is a mathematical proof that
+  the data cannot have come from any LHV model, regardless of how complex or
+  numerous the hidden variables are.
+\end{mathbox}
+
+\subsection{The three classical and quantum bounds}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{llc}
+  \toprule
+  Model class & Condition & Bound on $|S_1|$ \\
+  \midrule
+  Local hidden-variable (classical) & Any common-cause model & $\leq 2$ \\
+  Quantum mechanics & Entangled quantum systems & $\leq 2\sqrt{2} \approx 2.83$ \\
+  No-signaling (most general) & Any non-signaling theory & $\leq 4$ \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\begin{laymanbox}[What the three bounds mean in practice]
+  \begin{itemize}[itemsep=4pt]
+    \item $|S_1| \leq 2$: The data are compatible with (though do not prove)
+    a classical hidden-variable explanation. Normal market periods.
+
+    \item $2 < |S_1| \leq 2\sqrt{2}$: No classical hidden-variable model fits.
+    The co-movement is structurally ``more than classical.''
+    In finance, this is our crisis signal: the pair exhibits synchronized
+    extreme behavior that cannot be attributed to any shared common factor.
+
+    \item $2\sqrt{2} < |S_1| \leq 4$: Even quantum mechanics (with the
+    standard CHSH setup) cannot explain this. In practice, this range
+    typically reflects statistical noise from sparse regime cells (too few
+    observations in a 20-day window). It should be interpreted cautiously.
+  \end{itemize}
+\end{laymanbox}
+
+\begin{cautionbox}[We are NOT claiming stocks are quantum systems]
+  When we say ``Bell violation,'' we do \emph{not} claim quantum entanglement
+  in financial markets. The Bell inequality is a constraint on
+  \emph{classical probability theory}, not only on quantum mechanics. The
+  claim is:
+
+  \begin{quote}
+    \itshape The conditional joint return distribution of this stock pair,
+    across these four magnitude regimes, cannot be reproduced by any model
+    in which the two stocks respond independently to a shared common factor.
+  \end{quote}
+
+  This is a statement about probability structure. The Bell framework is used
+  because it provides the mathematical tool to detect this structural property
+  rigorously, with a threshold (the bound of~2) that follows from first
+  principles rather than being a tuning parameter.
+\end{cautionbox}
+
+%% ── Section 8 ─────────────────────────────────────────────────────────────────
+\section{Step 7 --- Rolling Windows: \texorpdfstring{$S_1$}{S1} as a Time Series}
+
+\subsection{Computing \texorpdfstring{$S_1(t)$}{S1(t)} for each date \texorpdfstring{$t$}{t}}
+
+For each pair $(A,B)$ and each date $t$, we apply the 20-day rolling window
+ending on $t$ and compute $S_1^{(A,B)}(t)$ as in Definition~\ref{def:s1}.
+This yields:
+\[
+  S_1^{(A,B)}(t) \in [-4, +4] \quad \text{for each pair }(A,B)\text{ and date }t
+\]
+
+\begin{cautionbox}[Statistical precision in a 20-day window]
+  With $W = 20$ observations split across 4 regime cells, each cell contains
+  on average only 5 observations. Individual $S_1$ values will be noisy. This
+  is acceptable because:
+
+  \begin{enumerate}[label=(\alph*), itemsep=2pt]
+    \item We aggregate over 1,378 pairs---noise at the pair level averages out
+    in the violation percentage.
+    \item Short windows are deliberately chosen to be \emph{responsive}: a
+    60-day window would be more statistically stable but would detect crises
+    weeks later, reducing practical utility as an early-warning indicator.
+    \item Noise is symmetric around the true $S_1$, so pairs should not
+    \emph{systematically} exceed 2 by chance. This can be verified by comparing
+    observed violation rates to a permutation-test null.
+  \end{enumerate}
+\end{cautionbox}
+
+\subsection{Handling undefined expectations}
+
+If any regime cell contains zero observations (denominator~$= 0$), $S_1$ is
+undefined for that pair on that date. Such pairs are:
+\begin{itemize}[itemsep=2pt]
+  \item Excluded from the numerator of violation percentage (not counted as
+  either violating or non-violating)
+  \item Excluded from the denominator (do not inflate TotalPairs)
+\end{itemize}
+This ensures the violation percentage is always computed over valid pairs only.
+
+%% ── Section 9 ─────────────────────────────────────────────────────────────────
+\section{Step 8 --- The Violation Percentage}
+
+\subsection{Definition}
+
+\begin{defn}[Daily violation percentage]\label{def:viol}
+  Let $N_t^{\text{viol}}$ be the number of pairs with $|S_1^{(A,B)}(t)| > 2$
+  and valid data. Let $\text{TotalPairs}_t$ be the number of pairs with valid
+  $S_1$. Then:
+  \begin{equation}\label{eq:viol}
+    \text{ViolationPct}(t)
+    = 100 \times \frac{N_t^{\text{viol}}}{\text{TotalPairs}_t}
+  \end{equation}
+\end{defn}
+
+\begin{laymanbox}[Violation percentage in plain English]
+  On any given day we look at all $\sim$1,378 stock pairs. For each pair,
+  we ask: is $|S_1| > 2$? We count the fraction that say ``yes.''
+
+  During calm periods: few pairs violate; the percentage is low.
+
+  During crises (2008, COVID-19, Ukraine War): many pairs simultaneously
+  exhibit non-classical co-movement; the percentage spikes sharply.
+
+  Plotting this one number against time gives a crisis indicator that can
+  be compared directly with VIX, GARCH volatility, and CDS spreads.
+\end{laymanbox}
+
+\subsection{From scalar to network}
+
+The violation percentage is a single scalar per day. Our paper's key extension
+is to treat the pairs $(A,B)$ with $|S_1| > 2$ as \emph{edges} in a daily
+network:
+\[
+  G_t = (\mathcal{V},\, \mathcal{E}_t), \qquad
+  \mathcal{E}_t = \{(A,B) : \abs{S_1^{(A,B)}(t)} > 2\}
+\]
+The topology of $G_t$---its density, clustering, giant component size,
+community structure, hub structure---characterizes the \emph{architecture}
+of the crisis, not just its intensity.
+
+\begin{laymanbox}[The network picture in plain English]
+  Think of the 53 stocks as cities. An edge (road) exists between two cities
+  when their Bell statistic exceeds~2---meaning their co-movement is too
+  tightly synchronized to be explained by any common factor.
+
+  On a quiet day: few roads; cities are mostly isolated.
+
+  During a crisis: roads appear everywhere simultaneously. The resulting
+  ``crisis network'' can be analysed:
+  \begin{itemize}[itemsep=2pt]
+    \item \textbf{High density}: almost all pairs are synchronized
+    \item \textbf{High clustering}: violations cluster within sectors
+    \item \textbf{Few communities}: the market consolidates into fewer, larger
+    synchronized blocs
+    \item \textbf{Hub emergence}: certain stocks become central connectors
+  \end{itemize}
+  These topological features carry information that the scalar violation
+  percentage alone cannot reveal.
+\end{laymanbox}
+
+%% ── Section 10 ────────────────────────────────────────────────────────────────
+\section{Complete Summary}
+
+\begin{tcolorbox}[
+  breakable, enhanced,
+  colback=white, colframe=keyblue,
+  coltitle=white, fonttitle=\bfseries,
+  title={The Complete $S_1$ Computation at a Glance},
+  arc=5pt, boxrule=1.5pt,
+  left=10pt, right=10pt, top=8pt, bottom=8pt,
+]
+
+\textbf{Input:} Adjusted close prices for stocks $A$ and $B$,
+rolling 20-day window ending on date $t$.
+
+\bigskip
+\textbf{Step 1: Daily returns.}
+\[
+  r_{i} = \frac{P_{i} - P_{i-1}}{P_{i-1}}, \quad i = 1,\ldots,20
+\]
+
+\textbf{Step 2: Binary signs.}
+\[
+  a_i = \sgn(r_{A,i}), \qquad b_i = \sgn(r_{B,i})
+\]
+
+\textbf{Step 3: Threshold masks} ($\tau = 0.05$):
+\begin{align*}
+  m_{ab,i}   &= \ind{|r_{A,i}|\geq\tau}\cdot\ind{|r_{B,i}|\geq\tau} \\
+  m_{ab',i}  &= \ind{|r_{A,i}|\geq\tau}\cdot\ind{|r_{B,i}|<\tau} \\
+  m_{a'b,i}  &= \ind{|r_{A,i}|<\tau}\cdot\ind{|r_{B,i}|\geq\tau} \\
+  m_{a'b',i} &= \ind{|r_{A,i}|<\tau}\cdot\ind{|r_{B,i}|<\tau}
+\end{align*}
+
+\textbf{Step 4: Conditional expectations.}
+\[
+  \Ecorr{a}{b} = \frac{\sum_i a_i b_i m_{ab,i}}{\sum_i m_{ab,i}}, \quad
+  \Ecorr{a}{b'} = \frac{\sum_i a_i b_i m_{ab',i}}{\sum_i m_{ab',i}},
+  \quad \text{etc.}
+\]
+
+\textbf{Step 5: CHSH correlator.}
+\[
+  \boxed{S_1 = \Ecorr{a}{b} + \Ecorr{a}{b'} + \Ecorr{a'}{b} - \Ecorr{a'}{b'}}
+\]
+
+\textbf{Step 6: Classify.}
+\[
+  \text{Violation} = \ind{|S_1| > 2}, \quad
+  \text{Classical bound: }|S_1|\leq 2 \text{ (proven)}
+\]
+
+\textbf{Step 7: Aggregate over all pairs.}
+\[
+  \text{ViolationPct}(t) = 100 \times
+  \frac{\#\{\text{pairs with }|S_1|>2\}}{\#\{\text{pairs with valid }S_1\}}
+\]
+
+\end{tcolorbox}
+
+%% ── Section 11 ────────────────────────────────────────────────────────────────
+\section{Addressing Common Objections}
+
+\subsection{``This is just Pearson correlation in disguise''}
+
+No. Pearson correlation is an \emph{unconditional} average of co-movement
+across all days. $S_1$ computes \emph{conditional} averages within each of four
+magnitude regimes and combines them with a specific sign pattern. Even if two
+stocks have high Pearson correlation, their $S_1$ may remain within $[-2, +2]$.
+Conversely, two stocks with low Pearson correlation could still violate if the
+regime-conditional structure is non-classical. The algebraic bound of~2 has
+no analogue for Pearson correlation; it is specific to the CHSH combination.
+
+\subsection{``Shared market shocks explain all the correlation''}
+
+This is the LHV claim, and Bell's theorem refutes it when $|S_1| > 2$. Any
+model in which both stocks respond (however complexly) to a shared factor
+$\lambda$---a Fed announcement, a crop report, a geopolitical event---is by
+definition an LHV model and therefore satisfies $|S_1| \leq 2$.
+Observation of $|S_1| > 2$ is mathematical proof that no such model fits.
+
+\subsection{``The 5\% threshold is arbitrary''}
+
+The value $\tau = 0.05$ is a design choice. The Bell bound of~2 is not---it
+is derived algebraically and holds for any threshold. Sensitivity analyses
+confirm robustness across $\tau \in [0.01, 0.05]$.
+
+\subsection{``Violations could arise from statistical noise in small windows''}
+
+True: with $\sim$5 observations per regime cell, individual pair $S_1$ values
+are noisy. But the aggregate violation percentage over 1,378 pairs is far more
+stable. And crucially, noise should not produce \emph{systematic} bias toward
+$|S_1| > 2$; this can be tested with a permutation null (randomly shuffling
+return time series within pairs destroys true temporal structure while
+preserving marginal distributions). The persistence of elevated violation
+percentages specifically during known crisis periods, and not during calm
+periods, is the key empirical validation.
+
+%% ── References ────────────────────────────────────────────────────────────────
+\section*{References}
+\addcontentsline{toc}{section}{References}
+
+\begin{enumerate}[label={[\arabic*]}, leftmargin=*, itemsep=5pt]
+  \item Bell, J.\,S.\ (1964). On the Einstein Podolsky Rosen paradox.
+        \textit{Physics Physique Fizika}, 1(3), 195--200.
+
+  \item Clauser, J.\,F., Horne, M.\,A., Shimony, A., \& Holt, R.\,A.\ (1969).
+        Proposed experiment to test local hidden-variable theories.
+        \textit{Physical Review Letters}, 23(15), 880--884.
+
+  \item Cirel'son, B.\,S.\ (1980). Quantum generalizations of Bell's inequality.
+        \textit{Letters in Mathematical Physics}, 4(2), 93--100.
+
+  \item Gallus, C., Blasiak, P., Pothos, E.\,M., Yearsley, J.\,M., \&
+        Borsuk, E.\ (2023). Bell correlations outside physics.
+        \textit{Scientific Reports}, 13, 4952.
+
+  \item Zarifian, A., Gallus, C., Blasiak, P., Pothos, E., \&
+        Overbeck, L.\ (2025). Using Bell violations as an indicator for
+        financial crisis. \textit{Journal of Finance and Data Science},
+        11, 100164.
+
+  \item Busemeyer, J.\,R.\ \& Bruza, P.\,D.\ (2012).
+        \textit{Quantum Models of Cognition and Decision}.
+        Cambridge University Press.
+\end{enumerate}
+
+\end{document}
