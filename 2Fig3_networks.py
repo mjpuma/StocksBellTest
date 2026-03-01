@@ -1,7 +1,8 @@
 """
 Generate Fig03: network snapshots at crisis periods (giant component only).
 
-Requires Results/s1_values.csv from 0.py, Results/volatility_traces/regime_vol.csv.
+Requires Results/s1_values.csv from 0.py, Results/volatility_traces/regime_vol.csv,
+yfinance_tickers.csv for group/category coloring.
 Outputs Figures/Fig03_networks.png (1×3 multipanel, full-width).
 """
 
@@ -14,6 +15,7 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({"font.size": 14})
 S1_FILE = "Results/s1_values.csv"
 VOL_FILE = "Results/volatility_traces/regime_vol.csv"
+TICKER_FILE = "yfinance_tickers.csv"
 VOL_THRESHOLD = 0.4
 N_EVENTS = 3
 LABEL_DEGREE_MIN = 2  # Only label nodes with degree >= this
@@ -21,6 +23,32 @@ NODE_SIZE_BASE = 80
 NODE_SIZE_SCALE = 25
 
 os.makedirs("Figures", exist_ok=True)
+
+# Load ticker metadata for group/category coloring
+ticker_to_group = {}
+ticker_to_category = {}
+if os.path.exists(TICKER_FILE):
+    tickers_df = pd.read_csv(TICKER_FILE)
+    for _, row in tickers_df.iterrows():
+        t = str(row.get("ticker", "")).strip()
+        if t:
+            ticker_to_group[t] = str(row.get("group", "Other")).strip()
+            ticker_to_category[t] = str(row.get("category", "Other")).strip()
+
+# Discrete colors per group (tab10 + tab20 for many groups)
+GROUP_COLORS = {
+    "Fertilizers": "#2E86AB",
+    "Seeds & Crop Protection": "#A23B72",
+    "Farm Machinery & Equipment": "#F18F01",
+    "Animal Health": "#C73E1D",
+    "Agricultural Trading & Processing": "#3B1F2B",
+    "Food Processing": "#95C623",
+    "Food Distribution": "#6A994E",
+    "Farmland REIT": "#BC6C25",
+    "Aquaculture": "#0077B6",
+    "Retail": "#9B5DE5",
+    "Other": "#888888",
+}
 
 df = pd.read_csv(S1_FILE)
 df["Date"] = pd.to_datetime(df["Date"])
@@ -112,14 +140,6 @@ for d in crisis_dates:
     G_gc = extract_giant_component(G)
     graphs.append(G_gc)
 
-# Shared color/size scales: global min/max degree across all giant components
-degree_values = []
-for G_gc in graphs:
-    if G_gc is not None:
-        degree_values.extend(dict(G_gc.degree()).values())
-vmin = 0
-vmax = max(degree_values) if degree_values else 1
-
 # Full-width 1×3 multipanel figure (reduced space between panels)
 fig, axes = plt.subplots(1, 3, figsize=(18, 6), gridspec_kw={"wspace": 0.12})
 for ax, G_gc, label, d in zip(axes, graphs, labels, crisis_dates):
@@ -132,27 +152,27 @@ for ax, G_gc, label, d in zip(axes, graphs, labels, crisis_dates):
     pos = nx.spring_layout(G_gc, seed=42, k=1.5)
     degrees = dict(G_gc.degree())
     node_sizes = [NODE_SIZE_BASE + NODE_SIZE_SCALE * degrees[n] for n in G_gc.nodes()]
-    node_colors = [degrees[n] for n in G_gc.nodes()]
+    node_colors = [GROUP_COLORS.get(ticker_to_group.get(n, "Other"), "#888888") for n in G_gc.nodes()]
     nx.draw_networkx_nodes(G_gc, pos, node_size=node_sizes, node_color=node_colors,
-                          cmap=plt.cm.Blues, alpha=0.8, ax=ax, vmin=vmin, vmax=vmax)
+                          alpha=0.8, ax=ax)
     nx.draw_networkx_edges(G_gc, pos, alpha=0.4, width=0.8, ax=ax)
     labels_to_show = {n: n for n in G_gc.nodes() if degrees[n] >= LABEL_DEGREE_MIN}
-    # White text for dark blue nodes (high degree), black for light blue
-    norm = (vmax - vmin) or 1
-    white_nodes = {n: n for n in labels_to_show if (degrees[n] - vmin) / norm > 0.5}
-    black_nodes = {n: n for n in labels_to_show if (degrees[n] - vmin) / norm <= 0.5}
-    if white_nodes:
-        nx.draw_networkx_labels(G_gc, pos, labels=white_nodes, font_size=7, ax=ax, font_color="white")
-    if black_nodes:
-        nx.draw_networkx_labels(G_gc, pos, labels=black_nodes, font_size=7, ax=ax, font_color="black")
+    nx.draw_networkx_labels(G_gc, pos, labels=labels_to_show, font_size=7, ax=ax, font_color="black")
 
-# Horizontal colorbar at bottom (use subplots_adjust to avoid tight_layout warning)
-sm = plt.cm.ScalarMappable(cmap=plt.cm.Blues, norm=plt.Normalize(vmin=vmin, vmax=vmax))
-sm.set_array([])
-cbar = fig.colorbar(sm, ax=axes, orientation="horizontal", shrink=0.8, aspect=40,
-                    pad=0.08, label="Degree")
+# Legend for groups (unique groups across all panels)
+all_groups = set()
+for G_gc in graphs:
+    if G_gc is not None:
+        for n in G_gc.nodes():
+            all_groups.add(ticker_to_group.get(n, "Other"))
+legend_handles = [plt.matplotlib.patches.Patch(facecolor=GROUP_COLORS.get(g, "#888888"),
+                edgecolor="none", label=g) for g in sorted(all_groups)]
+fig.legend(handles=legend_handles, loc="lower center", ncol=min(4, len(legend_handles)),
+           fontsize=9, frameon=False, bbox_to_anchor=(0.5, 0.04))
 
-fig.subplots_adjust(left=0.02, right=0.98, bottom=0.18, top=0.92, wspace=0.12)
+fig.text(0.5, 0.01, "Edges: pairs with |S₁| > 2 (Bell inequality violation)",
+         ha="center", fontsize=9, style="italic")
+fig.subplots_adjust(left=0.02, right=0.98, bottom=0.26, top=0.92, wspace=0.12)
 outpath = "Figures/Fig03_networks.png"
 plt.savefig(outpath, dpi=300)
 plt.savefig(outpath.replace(".png", ".svg"))

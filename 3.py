@@ -211,6 +211,26 @@ if __name__ == "__main__":
                 "Permutation test aggregate: all extreme vs all normal days.",
                 "tab:permtest_aggregate", METRIC_NAME_MAP
             )
+            # Condensed Table 1 for main text
+            TABLE1_METRICS = ["Density", "ScaleFreeAlpha", "AvgClusteringCoeff", "CommunitySizeEntropy"]
+            TABLE1_NAMES = {"Density": "Density", "ScaleFreeAlpha": "Scale-Free Alpha",
+                           "AvgClusteringCoeff": "Avg Clustering", "CommunitySizeEntropy": "Community Entropy"}
+            t1 = agg_df[agg_df["Metric"].isin(TABLE1_METRICS)].copy()
+            t1["Metric"] = t1["Metric"].map(TABLE1_NAMES)
+            t1["Extreme"] = t1["Obs_ext"].apply(lambda x: f"{x:.3f}" if pd.notna(x) else "—")
+            t1["Normal"] = t1["Obs_norm"].apply(lambda x: f"{x:.3f}" if pd.notna(x) else "—")
+            t1["% Change"] = t1["Percent_change"].apply(lambda x: f"{x:.1f}%" if pd.notna(x) else "—")
+            t1["p"] = t1["p_value"].apply(safe_fmt_scientific)
+            t1_main = t1[["Metric", "Extreme", "Normal", "% Change", "p"]]
+            t1_main.to_csv(os.path.join(OUT_DATA_DIR, "Table01_main.csv"), index=False, encoding="utf-8-sig")
+            t1_tex = t1_main.to_latex(index=False, escape=False, column_format="lcccr")
+            with open(os.path.join(OUT_DATA_DIR, "Table01_main.tex"), "w") as f:
+                f.write("\\begin{table}[ht]\n\\centering\n")
+                f.write("\\caption{Network metrics between extreme and normal volatility periods. Columns report means and percent change; p values are from permutation tests (100,000 permutations).}\n")
+                f.write("\\label{tab:permtest_main}\n")
+                f.write(t1_tex)
+                f.write("\\end{table}\n")
+            print("Saved Table01_main.csv and Table01_main.tex")
         print("LaTeX export done.")
         sys.exit(0)
 
@@ -309,6 +329,27 @@ if __name__ == "__main__":
         "tab:permtest_aggregate",
         METRIC_NAME_MAP
     )
+
+    # Condensed Table 1 for main text (4 metrics, aggregate only)
+    TABLE1_METRICS = ["Density", "ScaleFreeAlpha", "AvgClusteringCoeff", "CommunitySizeEntropy"]
+    TABLE1_NAMES = {"Density": "Density", "ScaleFreeAlpha": "Scale-Free Alpha",
+                   "AvgClusteringCoeff": "Avg Clustering", "CommunitySizeEntropy": "Community Entropy"}
+    t1 = agg_df[agg_df["Metric"].isin(TABLE1_METRICS)].copy()
+    t1["Metric"] = t1["Metric"].map(TABLE1_NAMES)
+    t1["Extreme"] = t1["Obs_ext"].apply(lambda x: f"{x:.3f}" if pd.notna(x) else "—")
+    t1["Normal"] = t1["Obs_norm"].apply(lambda x: f"{x:.3f}" if pd.notna(x) else "—")
+    t1["% Change"] = t1["Percent_change"].apply(lambda x: f"{x:.1f}%" if pd.notna(x) else "—")
+    t1["p"] = t1["p_value"].apply(safe_fmt_scientific)
+    t1_main = t1[["Metric", "Extreme", "Normal", "% Change", "p"]]
+    t1_main.to_csv(os.path.join(OUT_DATA_DIR, "Table01_main.csv"), index=False, encoding="utf-8-sig")
+    t1_tex = t1_main.to_latex(index=False, escape=False, column_format="lcccr")
+    with open(os.path.join(OUT_DATA_DIR, "Table01_main.tex"), "w") as f:
+        f.write("\\begin{table}[ht]\n\\centering\n")
+        f.write("\\caption{Network metrics between extreme and normal volatility periods. Columns report means and percent change; p values are from permutation tests (100,000 permutations).}\n")
+        f.write("\\label{tab:permtest_main}\n")
+        f.write(t1_tex)
+        f.write("\\end{table}\n")
+    print(f"Saved {OUT_DATA_DIR}/Table01_main.csv and Table01_main.tex")
 
     print(f"Aggregate comparison done — saved {agg_csv}")
 

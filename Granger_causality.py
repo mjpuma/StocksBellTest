@@ -85,6 +85,41 @@ res_df = pd.DataFrame(results)
 res_df.to_csv(OUT_CSV, index=False)
 print(f"Saved {OUT_CSV}")
 
+# Summary Table 2 for main text (3×2: Crisis | S₁→Vol | Vol→S₁)
+def get_sig_lags(df, crisis, direction, sig=0.05):
+    sub = df[(df["Crisis"] == crisis) & (df["Direction"] == direction) & (df["p Value"] < sig)]
+    if len(sub) == 0:
+        return "—"
+    lags = sorted(sub["Lag"].unique())
+    ranges = []
+    i = 0
+    while i < len(lags):
+        start = lags[i]
+        j = i
+        while j + 1 < len(lags) and lags[j + 1] == lags[j] + 1:
+            j += 1
+        end = lags[j]
+        ranges.append(f"{start}-{end}" if start != end else str(start))
+        i = j + 1
+    return "Lags " + ", ".join(ranges) + "*"
+
+crises = [c[0] for c in CRISIS_WINDOWS]
+t2_rows = []
+for crisis in crises:
+    s1_vol = get_sig_lags(res_df, crisis, "S1 → Volatility")
+    vol_s1 = get_sig_lags(res_df, crisis, "Volatility → S1")
+    t2_rows.append({"Crisis": crisis, "S₁ → Volatility": s1_vol, "Volatility → S₁": vol_s1})
+t2_df = pd.DataFrame(t2_rows)
+t2_df.to_csv("Results/Table02_main.csv", index=False, encoding="utf-8-sig")
+t2_tex = t2_df.to_latex(index=False, escape=False, column_format="lcc")
+with open("Results/Table02_main.tex", "w") as f:
+    f.write("\\begin{table}[ht]\n\\centering\n")
+    f.write("\\caption{Granger causality between S$_1$ violation and S\\&P GSCI volatility by crisis. Entries show significant lags (p < 0.05) for each direction; em dash indicates no significant causality at any lag.}\n")
+    f.write("\\label{tab:granger_main}\n")
+    f.write(t2_tex)
+    f.write("\\end{table}\n")
+print("Saved Results/Table02_main.csv and Table02_main.tex")
+
 # LaTeX export (supplement)
 def fmt_pval(p):
     if p < 1e-10:

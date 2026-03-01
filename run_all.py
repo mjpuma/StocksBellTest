@@ -17,6 +17,7 @@ scripts = [
     "0.py",
     "1.py",
     "2.py",
+    "scripts/compute_category_stats.py",
     "2Bootstrap.py",
     "2Fig2.py",
     "2Fig3_networks.py",

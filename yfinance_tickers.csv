@@ -1,56 +1,43 @@
-ticker,name,sector,exposure,market_cap_approx
-DE,Deere & Company,Equipment,Primary,110B
-CTVA,Corteva Inc,Seeds/Crop Protection,Primary,53B
-ADM,Archer-Daniels-Midland,Trading/Processing,Primary,38B
-NTR,Nutrien Ltd,Fertilizers,Primary,28B
-CF,CF Industries,Fertilizers,Primary,15B
-BG,Bunge Limited,Trading/Processing,Primary,14B
-MOS,Mosaic Company,Fertilizers,Primary,12B
-AGCO,AGCO Corporation,Equipment,Primary,9B
-FMC,FMC Corporation,Crop Protection,Primary,6B
-TSN,Tyson Foods,Food Processing,Primary,20B
-LW,Lamb Weston Holdings,Food Processing,Primary,12B
-TTC,Toro Company,Equipment,Secondary,8B
-CNH,CNH Industrial,Equipment,Primary,12B
-SYY,Sysco Corporation,Food Distribution,Secondary,40B
-AVD,American Vanguard Corp,Crop Protection,Primary,117M
-IPI,Intrepid Potash,Fertilizers,Primary,400M
-CALM,Cal-Maine Foods,Food Processing,Primary,3B
-SAFM,Sanderson Farms,Food Processing,Primary,4B
-STKL,SunOpta Inc,Food Processing,Primary,400M
-ARTW,Arts-Way Manufacturing,Equipment,Primary,50M
-ALG,Alamo Group,Equipment,Primary,1.5B
-TITN,Titan Machinery,Equipment,Primary,300M
-TSCO,Tractor Supply Company,Retail,Secondary,27B
-ICL,ICL Group,Fertilizers,Primary,6B
-CMP,Compass Minerals,Fertilizers,Secondary,800M
-SMG,Scotts Miracle-Gro,Fertilizers,Primary,3B
-UAN,CVR Partners,Fertilizers,Primary,1B
-BASFY,BASF SE (ADR),Chemicals,Secondary,42Bf
-UL,Unilever (ADR),Food Processing,Tertiary,140B
-NSRGY,Nestle (ADR),Food Processing,Tertiary,320B
-HRL,Hormel Foods,Food Processing,Primary,25B
-CPB,Campbell Soup,Food Processing,Primary,14B
-GIS,General Mills,Food Processing,Primary,40B
-K,Kellogg Company,Food Processing,Primary,20B
-CAG,ConAgra Brands,Food Processing,Primary,17B
-HSY,Hershey Company,Food Processing,Primary,35B
-SJM,J.M. Smucker,Food Processing,Primary,12B
-MDLZ,Mondelez International,Food Processing,Primary,85B
-UNFI,United Natural Foods,Food Distribution,Secondary,1B
-KR,Kroger Company,Retail,Tertiary,40B
-WMT,Walmart Inc,Retail,Tertiary,600B
-COST,Costco Wholesale,Retail,Tertiary,400B
-LAND,Gladstone Land Corporation,Farmland REIT,Primary,400M
-FPI,Farmland Partners Inc,Farmland REIT,Primary,300M
-CVX,Chevron Corporation,Energy,Tertiary,350B
-XOM,Exxon Mobil,Energy,Tertiary,500B
-COP,ConocoPhillips,Energy,Tertiary,140B
-UNP,Union Pacific,Transportation,Secondary,140B
-CNI,Canadian National Railway,Transportation,Secondary,80B
-NSC,Norfolk Southern,Transportation,Secondary,55B
-CSX,CSX Corporation,Transportation,Secondary,70B
-DOW,Dow Inc,Chemicals,Secondary,35B
-LYB,LyondellBasell,Chemicals,Secondary,25B
-BYND,Beyond Meat,Alternative Proteins,Primary,500M
-OTLY,Oatly Group,Alternative Proteins,Primary,800M
+﻿ticker,name,sector,industry,group,category,market_cap_approx
+DE,Deere & Company,Industrials,Farm & Heavy Construction Machinery,Farm Machinery & Equipment,MNC,170.7B
+ZTS,Zoetis Inc.,Healthcare,Drug Manufacturers - Specialty & Generic,Animal Health,MNC,57.8B
+CTVA,"Corteva, Inc.",Basic Materials,Agricultural Inputs,Seeds & Crop Protection,MNC,54.1B
+NTR,Nutrien Ltd.,Basic Materials,Agricultural Inputs,Fertilizers,MNC,36.6B
+ADM,Archer-Daniels-Midland Company,Consumer Defensive,Farm Products,Agricultural Trading & Processing,MNC,33.2B
+TSN,"Tyson Foods, Inc.",Consumer Defensive,Farm Products,Agricultural Trading & Processing,Pure Ag,22.9B
+CF,"CF Industries Holdings, Inc.",Basic Materials,Agricultural Inputs,Fertilizers,Pure Ag,16.1B
+BG,Bunge Limited,Consumer Defensive,Farm Products,Agricultural Trading & Processing,MNC,23.3B
+CNH,CNH Industrial N.V.,Industrials,Farm & Heavy Construction Machinery,Farm Machinery & Equipment,Pure Ag,15.4B
+DAR,Darling Ingredients Inc.,Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,8.4B
+TTC,Toro Company (The),Industrials,Tools & Accessories,Farm Machinery & Equipment,Pure Ag,9.7B
+ELAN,Elanco Animal Health Incorporat,Healthcare,Drug Manufacturers - Specialty & Generic,Animal Health,Pure Ag,13.1B
+MOS,Mosaic Company (The),Basic Materials,Agricultural Inputs,Fertilizers,Pure Ag,8.8B
+AGCO,AGCO Corporation,Industrials,Farm & Heavy Construction Machinery,Farm Machinery & Equipment,Pure Ag,10.2B
+CALM,"Cal-Maine Foods, Inc.",Consumer Defensive,Farm Products,Agricultural Trading & Processing,Pure Ag,4.2B
+FMC,FMC Corporation,Basic Materials,Agricultural Inputs,Seeds & Crop Protection,Pure Ag,1.8B
+AVD,American Vanguard Corporation,Basic Materials,Agricultural Inputs,Seeds & Crop Protection,Pure Ag,131M
+ICL,ICL Group Ltd.,Basic Materials,Agricultural Inputs,Fertilizers,Pure Ag,6.2B
+LW,"Lamb Weston Holdings, Inc.",Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,6.7B
+SYY,Sysco Corporation,Consumer Defensive,Food Distribution,Food Distribution,Pure Ag,43.7B
+LAND,Gladstone Land Corporation,Real Estate,REIT - Specialty,Farmland REIT,Pure Ag,458M
+FPI,Farmland Partners Inc.,Real Estate,REIT - Specialty,Farmland REIT,Pure Ag,586M
+BYND,"Beyond Meat, Inc.",Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,429M
+IPI,"Intrepid Potash, Inc",Basic Materials,Agricultural Inputs,Fertilizers,Pure Ag,496M
+SMG,Scotts Miracle-Gro Company (The,Basic Materials,Agricultural Inputs,Fertilizers,Pure Ag,4.1B
+UAN,"CVR Partners, LP",Basic Materials,Agricultural Inputs,Fertilizers,Pure Ag,1.1B
+HRL,Hormel Foods Corporation,Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,14.1B
+CPB,The Campbell's Company,Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,8.0B
+GIS,"General Mills, Inc.",Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,24.1B
+CAG,"ConAgra Brands, Inc.",Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,9.2B
+UNFI,"United Natural Foods, Inc.",Consumer Defensive,Food Distribution,Food Distribution,Pure Ag,2.3B
+TSCO,Tractor Supply Company,Consumer Cyclical,Specialty Retail,Retail,Pure Ag,27.4B
+TITN,Titan Machinery Inc.,Industrials,Industrial Distribution,Farm Machinery & Equipment,Pure Ag,456M
+ALG,"Alamo Group, Inc.",Industrials,Farm & Heavy Construction Machinery,Farm Machinery & Equipment,Pure Ag,2.6B
+STKL,"SunOpta, Inc.",Consumer Defensive,Beverages - Non-Alcoholic,Food Processing,Pure Ag,771M
+OTLY,Oatly Group AB,Consumer Defensive,Packaged Foods,Food Processing,Pure Ag,372M
+BAYN.DE,Bayer AG                      N,Healthcare,Drug Manufacturers - General,Seeds & Crop Protection,MNC,41.3B
+YAR.OL,YARA INTERNATIONAL,Basic Materials,Agricultural Inputs,Fertilizers,MNC,122.4B
+MOWI.OL,MOWI,Consumer Defensive,Farm Products,Aquaculture,MNC,118.2B
+6326.T,KUBOTA CORP,Industrials,Farm & Heavy Construction Machinery,Farm Machinery & Equipment,MNC,3.6T
+SALM.OL,SALMAR,Consumer Defensive,Farm Products,Aquaculture,MNC,77.1B
+SDF.DE,K+S Aktiengesellschaft        N,Basic Materials,Agricultural Inputs,Fertilizers,MNC,2.7B
