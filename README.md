@@ -1,6 +1,6 @@
-# Bell Inequality Violations in Agriculture Equity Networks
+# Bell Inequality Violations in Agriculture Stock Networks
 
-Analysis pipeline for detecting Bell inequality violations in agriculture-related equity returns and relating them to commodity volatility and network structure.
+Analysis pipeline for detecting Bell inequality violations in agriculture-related stock returns and relating them to commodity volatility and network structure.
 
 This repository is an updated and extended version of [56sarager/Final-Paper-Draft-](https://github.com/56sarager/Final-Paper-Draft-).
 
@@ -43,12 +43,12 @@ Use `MPLBACKEND=Agg` if running headless (e.g., on a server) to avoid blocking o
 
 ## Stock Selection Criteria
 
-The equity universe is built from **VanEck Agribusiness ETF (MOO)** constituents, focusing on agriculture to complement Zarifian et al. (2025), who used the S&P 500.
+The stock universe is built from **VanEck Agribusiness ETF (MOO)** constituents, focusing on agriculture to complement Zarifian et al. (2025), who used the S&P 500.
 
 | Criterion | Definition |
 |-----------|------------|
 | **Source** | MOO US constituents + ag-adjacent tickers (fertilizers, seeds, equipment, food processing, farmland REITs) |
-| **Scope** | `moo` (~15 US only), `moo_plus` (~37), `global` (~43, adds international: Bayer, Yara, Mowi, Kubota, SalMar, K+S) |
+| **Scope** | `moo` (~15 US only), `moo_plus` (~37), `global` (~42, adds international: Bayer, Yara, Mowi, Kubota, SalMar, K+S) — **default** |
 | **Group** | GICS-based mapping via `config/industry_to_group.csv` (Fertilizers, Seeds & Crop Protection, Farm Machinery, Animal Health, etc.) |
 | **Category** | **MNC** = non-US listing, market cap ≥ $50B, or override; **Pure Ag** = otherwise |
 | **Filters** | Optional `--min-cap`; tickers with missing/delisted data dropped at download |
@@ -59,6 +59,59 @@ python scripts/build_ticker_universe.py --scope global
 ```
 
 See [docs/STOCK_SELECTION.md](docs/STOCK_SELECTION.md) for full reference.
+
+## Appendix: Full Stock List (42 tickers)
+
+The default `--scope global` yields **42 stocks** (not 15). The `--scope moo` option restricts to ~15 US-only MOO constituents.
+
+| Ticker | Name | Group | Category |
+|--------|------|-------|----------|
+| DE | Deere & Company | Farm Machinery & Equipment | MNC |
+| ZTS | Zoetis Inc. | Animal Health | MNC |
+| CTVA | Corteva, Inc. | Seeds & Crop Protection | MNC |
+| NTR | Nutrien Ltd. | Fertilizers | MNC |
+| ADM | Archer-Daniels-Midland | Agricultural Trading & Processing | MNC |
+| TSN | Tyson Foods | Agricultural Trading & Processing | Pure Ag |
+| CF | CF Industries | Fertilizers | Pure Ag |
+| BG | Bunge Limited | Agricultural Trading & Processing | MNC |
+| CNH | CNH Industrial | Farm Machinery & Equipment | Pure Ag |
+| DAR | Darling Ingredients | Food Processing | Pure Ag |
+| TTC | Toro Company | Farm Machinery & Equipment | Pure Ag |
+| ELAN | Elanco Animal Health | Animal Health | Pure Ag |
+| MOS | Mosaic Company | Fertilizers | Pure Ag |
+| AGCO | AGCO Corporation | Farm Machinery & Equipment | Pure Ag |
+| CALM | Cal-Maine Foods | Agricultural Trading & Processing | Pure Ag |
+| FMC | FMC Corporation | Seeds & Crop Protection | Pure Ag |
+| AVD | American Vanguard | Seeds & Crop Protection | Pure Ag |
+| ICL | ICL Group | Fertilizers | Pure Ag |
+| LW | Lamb Weston Holdings | Food Processing | Pure Ag |
+| SYY | Sysco Corporation | Food Distribution | Pure Ag |
+| LAND | Gladstone Land Corporation | Farmland REIT | Pure Ag |
+| FPI | Farmland Partners | Farmland REIT | Pure Ag |
+| BYND | Beyond Meat | Food Processing | Pure Ag |
+| IPI | Intrepid Potash | Fertilizers | Pure Ag |
+| SMG | Scotts Miracle-Gro | Fertilizers | Pure Ag |
+| UAN | CVR Partners | Fertilizers | Pure Ag |
+| HRL | Hormel Foods | Food Processing | Pure Ag |
+| CPB | Campbell Soup | Food Processing | Pure Ag |
+| GIS | General Mills | Food Processing | Pure Ag |
+| CAG | ConAgra Brands | Food Processing | Pure Ag |
+| UNFI | United Natural Foods | Food Distribution | Pure Ag |
+| TSCO | Tractor Supply | Retail | Pure Ag |
+| TITN | Titan Machinery | Farm Machinery & Equipment | Pure Ag |
+| ALG | Alamo Group | Farm Machinery & Equipment | Pure Ag |
+| STKL | SunOpta | Food Processing | Pure Ag |
+| OTLY | Oatly Group | Food Processing | Pure Ag |
+| BAYN.DE | Bayer AG | Seeds & Crop Protection | MNC |
+| YAR.OL | Yara International | Fertilizers | MNC |
+| MOWI.OL | Mowi ASA | Aquaculture | MNC |
+| 6326.T | Kubota Corp | Farm Machinery & Equipment | MNC |
+| SALM.OL | SalMar ASA | Aquaculture | MNC |
+| SDF.DE | K+S AG | Fertilizers | MNC |
+
+*Use `python scripts/build_ticker_universe.py --scope global` to regenerate. For ~15 stocks only, use `--scope moo`.*
+
+To expand further, add tickers to `MOO_PLUS_EXTRA` or `MOO_INTERNATIONAL` in `scripts/build_ticker_universe.py`, or consider the VEGI (MSCI Agriculture Producers) index (~122 constituents) for a broader universe.
 
 ## Figures and Tables
 
