@@ -141,10 +141,19 @@ The answer is: **not if \(|S_1| > 2\).** By definition, any model that attribute
 
 The threshold 2 is thus the dividing line between "explainable by hidden variables" and "not explainable by hidden variables." It is not a matter of convention or choice; it is the boundary implied by Bell's theorem.
 
-### 2.7 Outputs
+### 2.7 Cell-Count Reliability and Filtering
 
-- **s1_values.csv:** Date, PairA, PairB, S1
-- **violation_pct.csv:** Date, ViolationPct, TotalPairs, ViolationCounts
+The four CHSH expectation terms are computed over subsets of the 20-day window. When a cell (e.g., both |r| ≥ 5%) has few observations, the E estimate is unstable and |S₁| can spuriously exceed 2 or even 2.83. To address this:
+
+- **MinCellCount:** For each (Date, PairA, PairB), we record the minimum observation count across the four cells. Low values (0–2) indicate unreliable S₁.
+- **Filtering (default):** With `USE_FILTERED=True`, `s1_values.csv` and ViolationPct contain only pair-dates with MinCellCount ≥ 3. Unfiltered data is in `s1_values_supplement.csv` and ViolationPct_supplement. Set `USE_FILTERED=False` in `0.py` to swap main and supplement.
+- **Usage:** Downstream scripts read `s1_values.csv` and thus use filtered data by default.
+
+### 2.8 Outputs
+
+- **s1_values.csv:** Date, PairA, PairB, S1, MinCellCount (filtered when USE_FILTERED=True)
+- **s1_values_supplement.csv:** Unfiltered S₁ (or filtered when USE_FILTERED=False)
+- **violation_pct.csv:** Date, ViolationPct, TotalPairs, ViolationCounts, ViolationPct_supplement, TotalPairs_supplement, ViolationCounts_supplement
 
 ---
 

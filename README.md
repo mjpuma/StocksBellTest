@@ -10,7 +10,10 @@ This repository is an updated and extended version of [56sarager/Final-Paper-Dra
 # Install dependencies
 pip install -r requirements.txt
 
-# Run full pipeline (0 → 1 → 2 → 2Bootstrap → 2Fig2 → 2Fig3 → 3 → Granger → timing)
+# Regenerate ticker list (42 stocks, optional; uses existing yfinance_tickers.csv if present)
+python scripts/build_ticker_universe.py --scope global
+
+# Run full pipeline (0 → 1 → 2 → compute_category_stats → 2Bootstrap → 2Fig2 → 2Fig3 → 3 → Granger → timing)
 python run_all.py
 
 # Verify computations
@@ -23,10 +26,15 @@ Use `MPLBACKEND=Agg` if running headless (e.g., on a server) to avoid blocking o
 
 | Step | Script | Input | Output |
 |------|--------|-------|--------|
-| 1 | `0.py` | `yfinance_tickers.csv` | `Results/s1_values.csv`, `Results/violation_pct.csv` |
+| 1 | `0.py` | `yfinance_tickers.csv` | `Results/s1_values.csv`, `Results/violation_pct.csv`, `Results/returns.csv` |
 | 2 | `1.py` | `Results/violation_pct.csv` | `Results/volatility_traces/*.csv`, `Fig01_volatility_and_violation.*` |
 | 3 | `2.py` | `Results/s1_values.csv` | `Results/networks/*.csv`, `Figures/networks/*.html` |
 | 4 | `scripts/compute_category_stats.py` | `Results/networks/`, `yfinance_tickers.csv` | `Results/category_stats.csv`, `Results/group_stats.csv` |
+| 4a | `scripts/group_permutation_tests.py` | `group_stats.csv`, `category_stats.csv`, `regime_vol.csv` | `group_permtest_*.csv`, `category_permtest_*.csv`, `Fig06_group_permtest_*.*`, `Fig06_category_permtest_*.*` (MNC vs Pure Ag) |
+| 4b | `scripts/within_cross_sector.py` | `s1_values.csv`, `yfinance_tickers.csv`, `regime_vol.csv` | `within_cross_sector.csv`, `violation_by_group.csv`, `violation_by_category.csv`, `Fig07_*.*` (incl. MNC vs Pure Ag) |
+| 4c | `scripts/mean_pairwise_correlation.py` | `Results/returns.csv`, `regime_vol.csv` | `Results/mean_pairwise_corr.csv`, `Fig08_mean_pairwise_corr.*` |
+| 4d | `scripts/var_analysis.py` | `violation_pct.csv`, `regime_vol.csv`, `s1_values.csv` | `Results/var_*.csv`, `Fig09_var_irf.*` |
+| 4e | `scripts/generate_interpretation.py` | All Results/*.csv | `docs/INTERPRETATION.md` |
 | 5 | `2Bootstrap.py` | `Results/volatility_traces/`, `Results/networks/` | `Results/event_tables/*.csv` |
 | 6 | `2Fig2.py` | `Results/networks/` | `Fig02_network_metrics.*` |
 | 7 | `2Fig3_networks.py` | `Results/s1_values.csv`, `Results/volatility_traces/`, `yfinance_tickers.csv` | `Fig03_networks.*` |
@@ -40,6 +48,8 @@ Use `MPLBACKEND=Agg` if running headless (e.g., on a server) to avoid blocking o
 - **S1 values**: Bell-CHSH correlator \(S_1 = E(a,b) + E(a,b') + E(a',b) - E(a',b')\)
 - **Violation %**: Fraction of ticker pairs with \(|S_1| > 2\) per day
 - **Volatility**: S&P GSCI (rolling, GARCH, regime-switching)
+
+**Filtered vs unfiltered:** By default, main results use **filtered** data (MinCellCount ≥ 3 per CHSH cell) for reliability. Unfiltered data is in `s1_values_supplement.csv` and `ViolationPct_supplement`. To use unfiltered as main: `USE_FILTERED=0 python run_all.py`.
 
 ## Stock Selection Criteria
 
@@ -127,6 +137,14 @@ To expand further, add tickers to `MOO_PLUS_EXTRA` or `MOO_INTERNATIONAL` in `sc
 
 **Fig05. Granger causality by crisis.** S₁↔volatility tests at lags 1–10 for 2008, COVID-19, and Ukraine. Crisis-specific patterns differ: S₁ leads volatility only in 2008; volatility leads S₁ only in COVID-19; Ukraine shows no significant causality.
 
+**Fig06. Group-level and category-level permutation tests.** Multi-panel: (A–C) MeanDegree, MeanClustering, MeanBetweenness by sector; (D–F) same metrics for MNC vs Pure Ag. Fig06_group_permtest.png (3 panels), Fig06_category_permtest.png (3 panels). Bars show % change; significant (p < 0.05) in blue.
+
+**Fig07. Within vs cross-sector violations.** Multi-panel Fig07_violations_multipanel.png: (A) Within vs cross pair types, extreme vs normal; (B) Violation % by sector (all groups); (C) Violation % by category (MNC vs Pure Ag).
+
+**Fig08. Mean pairwise correlation.** Crisis vs normal days; rolling 20-day mean pairwise Pearson correlation across tickers.
+
+**Fig09. VAR impulse responses.** Vector Autoregression of violation %, volatility, and within-sector violation %; 10-step impulse response functions.
+
 **FigS1 (Supplement). Timing cross-correlation.** Aggregate cross-correlation of violation % vs regime volatility at lags −30 to +30 days.
 
 ### Tables (main text)
@@ -139,6 +157,7 @@ To expand further, add tickers to `MOO_PLUS_EXTRA` or `MOO_INTERNATIONAL` in `sc
 
 - [docs/ANALYSIS.md](docs/ANALYSIS.md) — Mathematical definitions and methodology
 - [docs/STOCK_SELECTION.md](docs/STOCK_SELECTION.md) — Stock selection methodology and MOO reference
+- [docs/INTERPRETATION.md](docs/INTERPRETATION.md) — Interpretation of results: subsector connectivity, individual stocks, notable pairs, S₁ interpretation (relation to correlation, usefulness, high-value caveats), within vs cross-sector, VAR causality
 
 ## Requirements
 

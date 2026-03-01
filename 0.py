@@ -52,13 +52,13 @@ def download_yf_data(tickers, START_DATE = "2000-01-01", END_DATE   = date.today
 #Computation
 #========================================================================================================
 
-def compute_s1_sliding_pair(x, y, window_size=20, q=0.95, std_mult=2.0, fixed_thr=0.05, mode="fixed"):
+def compute_s1_sliding_pair(x, y, window_size=20, q=0.95, std_mult=2.0, fixed_thr=0.05, mode="fixed", return_min_cell=False):
 
     #Creates windows
     n = x.shape[0]
     m = n - window_size
     if m <= 0:
-        return np.array([])
+        return (np.array([]), np.array([])) if return_min_cell else np.array([])
 
     shape = (m, window_size)
     stride = x.strides[0]
@@ -93,6 +93,13 @@ def compute_s1_sliding_pair(x, y, window_size=20, q=0.95, std_mult=2.0, fixed_th
     else:
         raise ValueError("mode must be one of {'fixed', 'percentile', 'std'}")
 
+    # Cell counts for each of the 4 CHSH settings (sparse cells → unreliable S1)
+    cnt_ab = (mask_x0 & mask_y0).sum(axis=1)
+    cnt_abp = (mask_x0 & ~mask_y0).sum(axis=1)
+    cnt_apb = (~mask_x0 & mask_y0).sum(axis=1)
+    cnt_apbp = (~mask_x0 & ~mask_y0).sum(axis=1)
+    min_cell = np.minimum(np.minimum(cnt_ab, cnt_abp), np.minimum(cnt_apb, cnt_apbp))
+
     #Calculates expectations as the average sign product of terms in the mask
     def E(mask):
         term = (a_sgn * b_sgn) * mask
@@ -103,25 +110,35 @@ def compute_s1_sliding_pair(x, y, window_size=20, q=0.95, std_mult=2.0, fixed_th
         e[nz] = s[nz] / cnt[nz]
         return e
 
-    return E(mask_x0 & ~mask_y0)+ E(mask_x0 & mask_y0)+ E(~mask_x0 & mask_y0)- E(~mask_x0 & ~mask_y0)
+    s1 = E(mask_x0 & ~mask_y0) + E(mask_x0 & mask_y0) + E(~mask_x0 & mask_y0) - E(~mask_x0 & ~mask_y0)
+    return (s1, min_cell) if return_min_cell else s1
 
 def run_computation(
     returns,
     OUTPUT_PCT_CSV="violation_pct.csv",
     OUTPUT_S1_CSV="s1_values.csv",
+    OUTPUT_S1_SUPPLEMENT="s1_values_supplement.csv",
     WINDOW_SIZE=20,
     mode="fixed",
     fixed_thr=0.05,
     THRESHOLD_Q=0.95,
     STD_MULT=2.0,
-    BOUND=2
+    BOUND=2,
+    MIN_CELL_COUNT=3,
+    USE_FILTERED=True,
 ):
-    '''Creates two data sets of S1 values between stocks on a given date and number of S1 values exceeding a specified bound using a specified rolling window'''
+    '''Creates S1 values and violation percentage. Main outputs use filtered (MinCellCount >= MIN_CELL_COUNT) when USE_FILTERED=True.
+
+    USE_FILTERED: If True (default), s1_values.csv and ViolationPct contain only reliable pairs. Supplement has unfiltered.
+    MIN_CELL_COUNT: minimum observations per CHSH cell for "reliable" (default 3).
+    '''
     dates = returns.index[WINDOW_SIZE:]
     violation_counts = np.zeros(len(dates), dtype=int)
     total_counts = np.zeros(len(dates), dtype=int)
+    violation_counts_reliable = np.zeros(len(dates), dtype=int)
+    total_counts_reliable = np.zeros(len(dates), dtype=int)
 
-    s1_records = []  
+    s1_records = []
 
     pairs = itertools.combinations(returns.columns, 2)
     for A, B in tqdm(pairs, total=(len(returns.columns)*(len(returns.columns)-1))//2,
@@ -131,13 +148,14 @@ def run_computation(
             continue
 
         x, y = ts[A].values, ts[B].values
-        S1 = compute_s1_sliding_pair(
+        S1, min_cell = compute_s1_sliding_pair(
             x, y,
             window_size=WINDOW_SIZE,
             q=THRESHOLD_Q,
             std_mult=STD_MULT,
             fixed_thr=fixed_thr,
-            mode=mode
+            mode=mode,
+            return_min_cell=True,
         )
 
         if S1.size == 0:
@@ -146,29 +164,57 @@ def run_computation(
         pair_dates = ts.index[WINDOW_SIZE:]
         pos = np.searchsorted(dates, pair_dates)
         valid = (pos >= 0) & (pos < len(dates))
-        pos, S1, pair_dates = pos[valid], S1[valid], pair_dates[valid]
+        pos, S1, pair_dates, min_cell = pos[valid], S1[valid], pair_dates[valid], min_cell[valid]
+
+        reliable = min_cell >= MIN_CELL_COUNT
 
         np.add.at(total_counts, pos, 1)
         np.add.at(violation_counts, pos, (np.abs(S1) > BOUND).astype(int))
+        np.add.at(total_counts_reliable, pos, reliable.astype(int))
+        np.add.at(violation_counts_reliable, pos, (reliable & (np.abs(S1) > BOUND)).astype(int))
 
-        for d, s in zip(pair_dates, S1):
-            s1_records.append((d, A, B, s))
+        for d, s, mc in zip(pair_dates, S1, min_cell):
+            s1_records.append((d, A, B, s, int(mc)))
 
-    pct = np.where(total_counts > 0, 100 * violation_counts / total_counts, np.nan)
-    out_df = pd.DataFrame({
+    # Main vs supplement: USE_FILTERED=True → main=filtered, supplement=all
+    if USE_FILTERED:
+        pct_main = np.full(len(dates), np.nan, dtype=float)
+        v = total_counts_reliable > 0
+        pct_main[v] = 100 * violation_counts_reliable[v] / total_counts_reliable[v]
+        pct_supp = np.where(total_counts > 0, 100 * violation_counts / total_counts, np.nan)
+    else:
+        pct_main = np.where(total_counts > 0, 100 * violation_counts / total_counts, np.nan)
+        pct_supp = np.full(len(dates), np.nan, dtype=float)
+        v = total_counts_reliable > 0
+        pct_supp[v] = 100 * violation_counts_reliable[v] / total_counts_reliable[v]
+
+    out_cols = {
         "Date": dates,
-        "ViolationPct": pct,
-        "TotalPairs": total_counts,
-        "ViolationCounts": violation_counts
-    })
+        "ViolationPct": pct_main,
+        "TotalPairs": total_counts_reliable if USE_FILTERED else total_counts,
+        "ViolationCounts": violation_counts_reliable if USE_FILTERED else violation_counts,
+        "ViolationPct_supplement": pct_supp,
+        "TotalPairs_supplement": total_counts if USE_FILTERED else total_counts_reliable,
+        "ViolationCounts_supplement": violation_counts if USE_FILTERED else violation_counts_reliable,
+    }
+    out_df = pd.DataFrame(out_cols)
     out_df.to_csv(OUTPUT_PCT_CSV, index=False)
-    print(f"Saved percent violation to {OUTPUT_PCT_CSV}")
+    print(f"Saved percent violation to {OUTPUT_PCT_CSV} (main={'filtered' if USE_FILTERED else 'all'})")
 
     if s1_records:
-        s1_df = pd.DataFrame(s1_records, columns=["Date", "PairA", "PairB", "S1"])
+        s1_df = pd.DataFrame(s1_records, columns=["Date", "PairA", "PairB", "S1", "MinCellCount"])
         s1_df = s1_df.sort_values("Date")
-        s1_df.to_csv(OUTPUT_S1_CSV, index=False)
-        print(f"Saved detailed S1 values to {OUTPUT_S1_CSV}")
+        reliable_df = s1_df[s1_df["MinCellCount"] >= MIN_CELL_COUNT]
+        if USE_FILTERED:
+            reliable_df.to_csv(OUTPUT_S1_CSV, index=False)
+            s1_df.to_csv(OUTPUT_S1_SUPPLEMENT, index=False)
+            print(f"Saved {OUTPUT_S1_CSV} (filtered, MinCellCount>={MIN_CELL_COUNT})")
+            print(f"Saved {OUTPUT_S1_SUPPLEMENT} (supplement, unfiltered)")
+        else:
+            s1_df.to_csv(OUTPUT_S1_CSV, index=False)
+            reliable_df.to_csv(OUTPUT_S1_SUPPLEMENT, index=False)
+            print(f"Saved {OUTPUT_S1_CSV} (unfiltered)")
+            print(f"Saved {OUTPUT_S1_SUPPLEMENT} (supplement, filtered)")
     else:
         print("No S1 data to save.")
 
@@ -179,15 +225,21 @@ def run_computation(
 #========================================================================================================
 
 def yf_stock_data_plotly():
+    os.makedirs("Results", exist_ok=True)
     tickers = yf_stocks()
     returns = download_yf_data(tickers, "2000-01-01", date.today().strftime("%Y-%m-%d"))
+    returns.to_csv("Results/returns.csv")
+    print("Saved Results/returns.csv")
+    use_filtered = os.environ.get("USE_FILTERED", "1").lower() in ("1", "true", "yes")
     run_computation(
         returns,
         OUTPUT_PCT_CSV="Results/violation_pct.csv",
         OUTPUT_S1_CSV="Results/s1_values.csv",
+        OUTPUT_S1_SUPPLEMENT="Results/s1_values_supplement.csv",
         WINDOW_SIZE=20,
         mode="fixed",
-        BOUND=2
+        BOUND=2,
+        USE_FILTERED=use_filtered,
     )
 
 yf_stock_data_plotly()
